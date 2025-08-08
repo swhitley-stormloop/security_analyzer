@@ -1,0 +1,19 @@
+var wql = `
+  SELECT 
+  WQLQuery as query,
+  name,
+  text,
+  lastFunctionallyUpdated 
+  FROM {applicationId}_wqlQueries
+  WHERE (name contains '?')
+  AND (
+    lastFunctionallyUpdated >= '?'
+    AND lastFunctionallyUpdated <= '?'
+  )
+  ORDER BY lastFunctionallyUpdated DESC
+`;
+
+{
+  "wql": wql
+}
+

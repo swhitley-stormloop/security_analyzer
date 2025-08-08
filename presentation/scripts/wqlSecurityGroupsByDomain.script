@@ -1,0 +1,14 @@
+var wql = `
+  SELECT 
+  domain, 
+  putSecurityGroups, 
+  get_OnlySecurityGroups, 
+  view_OnlySecurityGroups, 
+  modifySecurityGroups 
+  FROM domainSecurityPolicies 
+  WHERE domain in (?)
+`;
+
+{
+  "wql": wql
+}

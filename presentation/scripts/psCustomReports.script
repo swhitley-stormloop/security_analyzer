@@ -1,0 +1,137 @@
+var btnAnalyze_onClick = function(tenantName) {
+  
+      const wqlKeys = ['Name', 'Secured by Domains', 'Result', 'Account Has Domains'];
+      
+      errorMsg.clearError();
+      if (empty(accountSelection.selectedEntries) || empty(rptSelection.selectedEntries) ) {
+        errorMsg.setError('Required fields are missing.');
+        return null;
+      }
+
+      // Report Security
+      let rptSecurity = getCustomReportSecurity.invoke({'wid': (rptSelection.selectedEntries[0].id ?? null)});
+
+      if (empty(rptSecurity.data[0].fields)) {
+        errorMsg.setError('Error reading report fields.'); 
+        return null;                       
+      }
+
+      // Analyze All Referenced Fields
+      if (chkAllFields.value == true) {
+        rptSecurity.data[0].fields = rptSecurity.data[0].allFields;
+      }
+
+      // Security Fields
+      let securityFieldList = json:query(rptSecurity, '$.data[0].fields[*].securityFields[*].id').distinct();
+      let securityFieldListCSV =  securityFieldList.join(',');
+      let wqlSecurityFields = getFieldSecurity.invoke({'wids': securityFieldListCSV });
+
+      // All Needed Domains
+      let fieldDomainList = json:query(rptSecurity, '$.data[0].fields[*].domain[*].id').distinct();
+      // Picks up domains needed for fields in calculated fields
+      let securityFieldDomainList = json:query(wqlSecurityFields, '$.data[*].domain[*].id').distinct();
+      fieldDomainList = list:join(fieldDomainList, securityFieldDomainList);
+
+      // Data Source Domains and Data Source Filter Domains
+      let dataSourceDomainList = rptSecurity.data[0].dataSource.domain.map( domain => domain.id);
+      let securedByDomainsList = list:join(fieldDomainList, dataSourceDomainList);
+      let dsFilterDomainList = [];
+      if (!empty(rptSecurity.data[0].dsFilter.dsFilter.id)) {
+        dsFilterDomainList = list:join(securedByDomainsList, [rptSecurity.data[0].dsFilter.dsFilter.id]);
+        securedByDomainsList = list:join(securedByDomainsList, dsFilterDomainList);
+      }
+      let securedByDomainsCSV = securedByDomainsList.join(',');
+      // End - Secured By Domains
+      
+      // Get Security Groups for the account, limited by the needed domains.
+      let accountSecurity = getSecurityGroupsByDomainAndAccount.invoke({'domains': securedByDomainsCSV, 'accounts': accountSelection.selectedEntries[0].id });
+
+      // Unique Account Domain List
+      let accountDomainList = json:query(accountSecurity, '$.data[*].domains[*].id').distinct();
+
+      let fields = rptSecurity.data[0].fields.map( field => {
+        let columns = {:};
+        columns.add(wqlKeys[0], field.field.descriptor  + utils.objLink(tenantName, field.field));
+        // Calculated field domains
+        let calcField = false;
+        if (empty(field.domain) && !empty(field.securityFields)) {
+          calcField = true;
+          field.securityFields.map( securityField => {
+            let fld = wqlSecurityFields.data.filter( f => f.field.id == securityField.id);
+            if (!empty(fld)) {
+              field.domain = list:join(field.domain, fld[0].domain);
+            }
+          });
+          field.domain = field.domain.distinct().sort();
+        }                        
+        if (!empty(field.domain)) {
+          let fieldDomains = field.domain.map( domain => domain.descriptor + utils.objLink(tenantName, domain));
+          let fieldDomainsOutput = fieldDomains.join('<br/>');
+          let hasDomains = field.domain.filter( domain => list:contains(accountDomainList, domain.id));
+          let hasDomainsOutput = hasDomains.map( domain => domain.descriptor  + utils.objLink(tenantName, domain)).join('<br/>');
+          columns.add(wqlKeys[1], fieldDomainsOutput);
+          columns.add(wqlKeys[2], utils.resultInd(hasDomains, fieldDomains, calcField));
+          columns.add(wqlKeys[3], hasDomainsOutput);
+        }
+        return columns;
+      });
+
+    // Field Grid
+    let dataObj = {:};                  
+    dataObj.wqlKeys = wqlKeys;
+    dataObj.wqlResult = fields; 
+    dataObj.wqlResultsError = rptSecurity.error;
+    resultsGrid.setData(dataObj);
+
+
+    // Data Source and Data Source Filter
+    dataObj = {:};
+    dataObj.wqlKeys = wqlKeys;
+
+    let rows = [];
+    let columns = {:};
+    columns.add(wqlKeys[0], rptSecurity.data[0].dataSource.dataSource.descriptor + utils.objLink(tenantName, rptSecurity.data[0].dataSource.dataSource) + ' (Data Source)');
+    columns.add(wqlKeys[1], rptSecurity.data[0].dataSource.domain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>'));
+    let hasDataSourceDomain = rptSecurity.data[0].dataSource.domain.filter( domain => list:contains(accountDomainList, domain.id));
+    columns.add(wqlKeys[2], utils.resultInd(hasDataSourceDomain, null, null));
+    columns.add(wqlKeys[3], hasDataSourceDomain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>'));
+    rows.add(columns);
+
+    if ( !empty(rptSecurity.data[0].dsFilter.dsFilter.descriptor)) {
+      columns = {:};
+      columns.add(wqlKeys[0], rptSecurity.data[0].dsFilter.dsFilter.descriptor + utils.objLink(tenantName, rptSecurity.data[0].dsFilter.dsFilter) + ' (Data Source Filter)');
+      columns.add(wqlKeys[1], rptSecurity.data[0].dsFilter.domain.map( domain => domain.descriptor  + utils.objLink(tenantName, domain)).join('<br/>'));
+      let hasFilterDomain = rptSecurity.data[0].dsFilter.domain.filter( domain => list:contains(accountDomainList, domain.id));
+      columns.add(wqlKeys[2], utils.resultInd(hasFilterDomain, null, null));
+      columns.add(wqlKeys[3], hasFilterDomain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>'));
+      rows.add(columns);
+    }
+
+
+    dataObj.wqlResult = rows; 
+    dataObj.wqlResultsError = rptSecurity.error;
+    dsGrid.setData(dataObj);
+
+
+  // Minimum Domains Needed
+  if (chkDomainSuggestion.value) {
+    // Build the map for each field/row with the list of domains.
+    let minimumDomainMap = {:};
+    for (let i=0; i < rptSecurity.data[0].fields.size(); i++ ) {
+      if (!empty(rptSecurity.data[0].fields[i].domain)) {
+        minimumDomainMap.add('Row ' + i, rptSecurity.data[0].fields[i].domain.map(domain => domain.descriptor));
+      }
+    }
+    rptSecurity.data[0].dataSource.domain.map( domain => minimumDomainMap.add('Row Data Source', [domain.descriptor]));
+    if ( !empty(rptSecurity.data[0].dsFilter.dsFilter.domain)) {
+      minimumDomainMap.add('Row Data Filter', rptSecurity.data[0].dsFilter.dsFilter.domain.map(domain => domain.descriptor));
+    }
+    let minDomainResult = minDomainList.findMinimumDomains( minimumDomainMap );
+    mdlSection.setData(minDomainResult); 
+    mdlSection.setVisible(true);       
+  }                           
+};
+
+{
+  "btnAnalyze_onClick": btnAnalyze_onClick
+}

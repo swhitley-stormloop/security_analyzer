@@ -1,0 +1,11 @@
+var wql = `
+  SELECT
+  field, 
+  domain 
+  FROM allFields 
+  WHERE field in (?)
+`;
+
+{
+  "wql": wql
+}

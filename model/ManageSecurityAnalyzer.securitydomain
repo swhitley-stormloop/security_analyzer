@@ -1,0 +1,6 @@
+{
+  "id": 1,
+  "name": "ManageSecurityAnalyzer",
+  "enabledForPageSecurity": true,
+  "enabledForOrchestrationSecurity": false
+}

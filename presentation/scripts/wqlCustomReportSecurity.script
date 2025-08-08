@@ -1,0 +1,15 @@
+var wql = `
+  SELECT 
+  customReport, 
+  dataSource{domain2 as domain, dataSource} as dataSource, 
+  dataSourceFilter1{dataSourceFilter1 as dsFilter, domain2 as domain} as dsFilter,
+  fieldsDisplayedOnReport{field, reportFieldsUsedForSecurity as securityFields, domain} as fields,
+  fieldsReferencedInReport{field, reportFieldsUsedForSecurity as securityFields, domain} as allFields 
+  FROM 
+  allCustomReports 
+  WHERE customReport in (?)
+`;
+
+{
+  "wql": wql
+}

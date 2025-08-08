@@ -1,0 +1,18 @@
+var wql = `
+    PARAMETERS includeSubDomains = true 
+    SELECT 
+    securityGroup, 
+    domainsGrantedToSecurityGroup as domains 
+    FROM allSecurityGroups 
+    WHERE ON domainsGrantedToSecurityGroup domain in (?) 
+    WHERE domainsGrantedToSecurityGroup is not empty 
+    AND members in (?)
+`;
+
+{
+  "wql": wql
+}
+
+
+
+

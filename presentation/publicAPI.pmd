@@ -1,0 +1,212 @@
+{
+  "id": "publicAPI",
+  "include": [
+    "utils.script",
+    "wqlAccountSearch.script",
+    "wqlWebServiceAll.script",
+    "wqlCustomReportSecurity.script",
+    "wqlSecurityGroupsByDomainAndAccount.script",
+    "minDomainList.script",
+    "wqlWebServiceSecurity.script",
+    "wqlBusinessProcessTypes.script",
+    "psPublicAPI.script"    
+  ],
+  "endPoints": [
+    {
+      "name": "getWebServices",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  utils.getWQL(
+                        wqlWebServiceAll.wql, 
+                        [], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    );
+                  %>",
+      "authType": "sso"
+    },
+    {
+      "name": "getWebServiceSecurity",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  utils.getWQL(
+                        wqlWebServiceSecurity.wql, 
+                        [
+                          wid
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    );
+                  %>",
+      "authType": "sso",
+      "deferred": true
+    },
+    {
+      "name": "getBusinessProcessTypes",
+      "baseUrlType": "workday-wql",
+      "url": "",
+      "authType": "sso",
+      "httpMethod": "POST",
+      "deferred": true,
+      "onSend": "<%
+        {
+          'query': utils.buildWQL(
+                        wqlBusinessProcessTypes.wql, 
+                        [
+                          wids,
+                          wids
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    )
+        }
+      %>"      
+    },    
+    {
+      "name": "getSecurityGroupsByDomainAndAccount",
+      "baseUrlType": "workday-wql",
+      "url": "",
+      "authType": "sso",
+      "httpMethod": "POST",
+      "deferred": true,
+      "onSend": "<%
+        {
+          'query': utils.buildWQL(
+                        wqlSecurityGroupsByDomainAndAccount.wql, 
+                        [
+                          domains,
+                          accounts
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    )
+        }
+      %>"
+    }
+  ],
+  "presentation": {
+    "title": {
+      "type": "title",
+      "label": "Security Analyzer"
+    },
+    "body": {
+      "type": "section",
+      "horizontal": false,
+      "children": [
+        {
+          "enabled": false,
+          "type": "richText",
+          "value": "<% 
+              `<h1>Public API</h1>
+              <p>Security Analyzer identifies reporting and integration permission needs.</p>
+              <p>Select an account and web service operation or service, then click <b>Analyze</b>.</p>`
+          %>"
+        },
+        {
+          "type": "pod",
+          "podId": "accountSearch"
+        },
+        {
+          "type": "instanceList",
+          "id": "webServiceOpSelection",
+          "required": true,
+          "label": "Select a Web Service Operation",
+          "values": "<% [] %>",
+          "onSearch": "<%
+
+                        let webServiceOperationList = list:sort(json:query(getWebServices, '$.data[*].webServiceOperation[*]'), 'descriptor', true);
+                        let searchList = webServiceOperationList.filter( op => op.descriptor.containsIgnoreCase(event.query));
+                        searchList.map( row => {'id': row.id, 'descriptor': row.descriptor});
+          %>",
+          "onChange": "<%
+                      if (!empty(self.selectedEntries)) {     
+                        let path = string:formatMessage('$.data[?(@.webServiceOperation[?(@.id == \"{0}\")])]', self.selectedEntries[0].id);                   
+                        let data = json:query(getWebServices, path);
+                        webServiceSelection.setValue([data[0].webService.id]);
+                      }
+          %>"          
+        }, 
+        {
+          "type": "checkBox",
+          "id": "chkShowWebService",
+          "label": "Show All Operations by Web Service",
+          "value": false,
+          "onChange": "<%
+                    webServiceSection.setVisible(self.value);
+          %>"
+        },  
+        {
+          "type": "dynamicSection",
+          "id": "webServiceSection",
+          "data": "<% [] %>",
+          "dataVariableName": "data",
+          "visible": "<% false %>",
+          "children": [
+            {
+              "type": "instanceList",
+              "id": "webServiceSelection",
+              "label": "Select a Web Service",
+              "required": true,
+              "values": "<% getWebServices.data.map( ws => {'id': ws.webService.id, 'descriptor': ws.webService.descriptor}) %>",
+              "onChange": "<%
+                          if (!empty(self.selectedEntries)) {
+                            webServiceOpSelection.setValues([]);
+
+                            let webServices = json:query(getWebServices, '$.data[*]'); 
+                            let webServiceOperationList = webServices.filter( row => row.webService.id == self.selectedEntries[0].id);
+                            let webServiceOpList = json:query(webServiceOperationList, '$[*].webServiceOperation[*]');
+                            
+                            if (!empty(webServiceOpList)) {
+                              webServiceOpSelection.setValues(webServiceOpList);
+                              webServiceOpSelection.setValue([webServiceOpList[0].id]);
+                            }
+                          }
+              %>"                    
+            },
+            {
+              "type": "readOnlyText",
+              "value": "Up to 100 web service operations will be analyzed for a web service."
+            }            
+          ]
+        },
+        {
+          "type": "richText",
+          "enabled": false,
+          "id": "errorMsg",
+          "value": "<% %>"
+        },
+        {
+          "type": "pageActionButton",
+          "id": "btnAnalyze",
+          "label": "Analyze",
+          "onClick": "<% psPublicAPI.btnAnalyze_onClick(tenant) %>"
+        },
+        {
+          "type": "pod",
+          "podId": "resultsGrid",
+          "parameters": {
+            "gridId": "resultsGrid",
+            "label": "Web Service Operations"
+          }
+        },
+        {
+          "type": "editButtonBar",
+          "editButtons": [
+            {
+              "buttonType": "AUXILIARY",
+              "ignoreRequiredFields": "true",
+              "type": "editButton",
+              "id": "home",
+              "label": "Home"
+            }
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer"
+    },
+    "pageType": "EDIT",
+    "standardEditButtonsHidden": true
+  },
+  "securityDomains": [
+    "ManageSecurityAnalyzer",
+    "SetupSecurityAnalyzer"
+  ]
+}

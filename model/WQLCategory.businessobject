@@ -1,0 +1,35 @@
+{
+  "id": 2,
+  "name": "WQLCategory",
+  "label": "WQL Category",
+  "defaultSecurityDomains": [
+    "SetupWQLLibrary",
+    "ManageWQLLibrary"
+  ],
+  "defaultCollection": {
+    "name": "wqlCategories",
+    "label": "WQL Categories"
+  },
+  "fields": [
+    {
+      "enableSearch": true,
+      "enableIndex": true,
+      "isPurgeable": false,
+      "useForDisplay": true,
+      "isReferenceId": false,
+      "type": "TEXT",
+      "name": "name",
+      "id": 1
+    },
+    {
+      "enableReportingFromTarget": false,
+      "secureByTarget": true,
+      "target": "CUSTOM_ORGANIZATION",
+      "isPurgeable": false,
+      "useForDisplay": false,
+      "type": "SINGLE_INSTANCE",
+      "name": "organization",
+      "id": 2
+    }
+  ]
+}

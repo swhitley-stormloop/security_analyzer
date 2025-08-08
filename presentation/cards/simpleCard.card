@@ -1,0 +1,21 @@
+{
+    "id": "simpleCard",
+    "parameters": ["title", "subtitle", "body", "label", "task", "icon"],
+    "header": {
+        "title": "<% title %>",
+        "subtitle": "<% subtitle %>",
+        "icon" : "<% icon %>"
+    },
+    "body": {
+        "type": "simpleCard",
+        "value": "<% string:toString(body) %>"
+    },
+    "footer": [
+        {
+            "label": "<% label %>",
+            "taskReference": {
+                "taskId": "<% task %>"
+            }
+        }
+    ]
+}

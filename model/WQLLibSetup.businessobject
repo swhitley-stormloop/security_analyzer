@@ -1,0 +1,26 @@
+{
+  "id": 3,
+  "name": "WQLLibSetup",
+  "label": "WQL Library Setup",
+  "defaultSecurityDomains": [
+    "SetupWQLLibrary"
+  ],
+  "defaultCollection": {
+    "name": "wqlLibSetup",
+    "label": "WQL Library Setup"
+  },
+  "fields": [
+    {
+      "enableSearch": false,
+      "enableIndex": false,
+      "isPurgeable": false,
+      "useForDisplay": false,
+      "isReferenceId": false,
+      "description": "Used with WQL Category to enable secure access.",
+      "label": "Organization Type",
+      "type": "TEXT",
+      "name": "organizationType",
+      "id": 1
+    }
+  ]
+}

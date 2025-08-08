@@ -1,0 +1,14 @@
+var wql = `
+  SELECT 
+  WQLQuery as query,
+  name,
+  text,
+  lastFunctionallyUpdated 
+  FROM {applicationId}_wqlQueries
+  ORDER BY lastFunctionallyUpdated DESC
+`;
+
+{
+  "wql": wql
+}
+

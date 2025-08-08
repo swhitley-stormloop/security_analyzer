@@ -1,0 +1,12 @@
+var wql = `
+  SELECT 
+  webServiceOperation,
+  domain2 as domain
+  FROM webServiceOperationsForRolesReport 
+  (webService = ?)
+  ORDER BY webServiceOperationName
+`;
+
+{
+  "wql": wql
+}

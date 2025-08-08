@@ -1,0 +1,83 @@
+/**
+ * Find the minimum number of domains needed to collect all rows using greedy approach.
+ * 
+ * Args:
+ *     rowsMap: Map where keys are rows and values are lists of domains
+ *     Example: {'Row1': ['Domain 1', 'Domain 2'], 'Row2': ['Domain 3', 'Domain 1'], 'Row3': ['Domain 2']}
+ * 
+ * Returns:
+ *     Array of domains that cover all rows with minimum count
+ */
+var findMinimumDomains = function(rowsMap) {
+    let allRows = [];
+    let allDomains = [];
+    let selectedDomains = [];
+    let uncoveredRows = [];
+    
+    // Get all unique rows
+    allRows = rowsMap.keys();    
+    
+    // Get all unique domains
+    allDomains = list:flatten(rowsMap.values()).distinct().sort();
+    
+    // Initialize uncovered rows with all rows
+    allRows.forEach( row => uncoveredRows.add(row));
+   
+    // Greedy approach: repeatedly select domain that covers most uncovered rows
+    let max = 0;
+    while (uncoveredRows.size() > 0) {
+        max++;
+        if (max > 100) {
+            return [];
+        }
+     
+        let bestDomain = null;
+        let maxCoverage = 0;
+        
+       // Find domain that covers the most uncovered rows
+       for (let d = 0; d < allDomains.size(); d++) {
+            let domain = allDomains[d];
+            let coverage = 0;
+            
+            // Count how many uncovered rows this domain covers
+            for (let r = 0; r < uncoveredRows.size(); r++) {
+                let row = uncoveredRows[r];
+                let availableDomains = rowsMap[row];
+                
+                if (availableDomains.indexOf(domain) != -1) {
+                    coverage = coverage + 1;
+                }
+            }
+
+              // Update best domain if this one covers more rows
+            if (coverage > maxCoverage) {
+                maxCoverage = coverage;
+                bestDomain = domain;
+            }
+
+        };
+        
+        // Add best domain to selected domains
+        if (bestDomain != null) {
+            selectedDomains.add(bestDomain);
+            
+            // Remove covered rows from uncovered rows
+            let newUncoveredRows = [];
+            for (let r = 0; r < uncoveredRows.size(); r++) {
+                let row = uncoveredRows[r];
+                let availableDomains = rowsMap[row];
+                
+                if (availableDomains.indexOf(bestDomain) == -1) {
+                    newUncoveredRows.add(row);
+                }
+            }
+            uncoveredRows = newUncoveredRows;
+        }
+    }
+    
+    return selectedDomains;
+};  
+
+{
+  "findMinimumDomains": findMinimumDomains 
+}

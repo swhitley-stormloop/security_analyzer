@@ -1,0 +1,21 @@
+{
+  "id": "security_analyzer_kkvxdf",
+  "languages": [
+    {
+      "code": "en-US",
+      "description": "English"
+    }
+  ],
+  "siteAuth": {
+    "authTypes": [
+      {
+        "scheme": "SSO",
+        "id": "sso"
+      }
+    ]
+  },
+  "siteId": "security_analyzer_kkvxdf",
+  "cdnEnabled": true,
+  "siteProperties": [ ],
+  "applicationId": "security_analyzer_kkvxdf"
+}

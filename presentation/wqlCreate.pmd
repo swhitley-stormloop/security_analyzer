@@ -1,0 +1,58 @@
+{
+  "id": "wqlCreate",
+  "include": [
+    "utils.script"
+  ],
+  "endPoints": [],
+  "script": "",
+  "presentation": {
+    "pageType": "edit",
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "Create WQL Query"
+    },
+    "body": {
+      "type": "section",
+      "id": "bodySection",
+      "children": [
+        {
+          "type": "pod",
+          "podId": "wqlCRUD"
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    }
+  },
+  "outboundData": {
+    "outboundEndPoints": [
+      {
+        "name": "crudWQL",
+        "baseUrlType": "app",
+        "url": "<% 'wqlQueries' %>",
+        "authType": "sso",
+        "httpMethod": "POST",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      }
+    ],
+    "responseErrorDetail": {
+      "errorSummary": "<% error %>",
+      "errors": "<% empty errors ? [] : [error].join(errors.map(err => { err.error } )) %>"
+    }
+  },
+  "securityDomains": [
+    "SetupWQLLibrary",
+    "ManageWQLLibrary"
+  ]
+}

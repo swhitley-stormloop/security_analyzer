@@ -1,0 +1,11 @@
+var wql = `
+  SELECT 
+  customReport 
+  FROM allCustomReports 
+  WHERE reportName contains '?'
+`;
+
+{
+  "wql": wql
+}
+

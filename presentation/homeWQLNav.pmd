@@ -1,0 +1,50 @@
+{
+  "id": "homeWQLNav",
+  "endPoints": [],
+  "presentation": {
+    "title": {
+      "type": "title",
+      "label": "Home"
+    },
+    "body": {
+      "type": "section",
+      "horizontal": false,
+      "children": [
+        {
+          "type": "button",
+          "label": "⤺ Back to Home",
+          "taskReference": {
+            "type": "taskReference",
+            "taskId": "hub"
+          },
+          "action": "LINK",
+          "commandHttpMethod": "GET"
+        },
+        {
+          "type": "cardContainer",
+          "cards": [
+            {
+              "type": "card",
+              "cardId": "simpleCard",
+              "parameters": {
+                "title": "WQL Library",
+                "subtitle": "WQL",
+                "body": "Manage your WQL Queries",
+                "label": "WQL",
+                "icon": "wd-accent-data-refresh",
+                "task": "wqlLibHub"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer"
+    }
+  },
+  "securityDomains": [
+    "ManageWQLLibrary",
+    "SetupWQLLibrary"
+  ]
+}

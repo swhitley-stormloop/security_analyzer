@@ -1,0 +1,183 @@
+{
+  "id": "wqlLibCategory",
+  "securityDomains": [
+    "SetupWQLLibrary"
+  ],
+  "script": "",
+  "endPoints": [
+    {
+      "name": "getOrganizationsType",
+      "baseUrlType": "app",
+      "httpMethod": "GET",
+      "authType": "sso",
+      "url": "<% 'wqlLibSetup' %>"
+    },
+    {
+      "name": "getCustomOrganizations",
+      "baseUrlType": "workday-common",
+      "httpMethod": "GET",
+      "authType": "sso",
+      "url": "<% 'organizations?organizationType=' + (!empty(getOrganizationsType.data[0].organizationType) ? getOrganizationsType.data[0].organizationType : '') %>"
+    },
+    {
+      "name": "getWQLCategories",
+      "baseUrlType": "app",
+      "httpMethod": "GET",
+      "authType": "sso",
+      "url": "<% 'wqlCategories' %>"
+    }
+  ],
+  "outboundData": {
+    "outboundEndPoints": [
+      {
+        "name": "createWQLCategory",
+        "baseUrlType": "app",
+        "url": "<% 'wqlCategories' %>",
+        "exclude": "<% ! (empty wQLCategoryId.value) %>",
+        "authType": "sso",
+        "httpMethod": "POST",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      },
+      {
+        "name": "updateWQLCategory",
+        "baseUrlType": "app",
+        "url": "<% 'wqlCategories/' + wQLCategoryId.value %>",
+        "exclude": "<% empty wQLCategoryId.value %>",
+        "authType": "sso",
+        "httpMethod": "PUT",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      },
+      {
+        "name": "deleteWQLCategory",
+        "baseUrlType": "app",
+        "url": "<% 'wqlCategories/' + wQLCategoryId.value %>",
+        "authType": "sso",
+        "httpMethod": "DELETE",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      }
+    ],
+    "responseErrorDetail": {
+      "errorSummary": "<% error %>",
+      "errors": "<% empty errors ? [] : [error].join(errors.map(err => { err.error } )) %>"
+    }
+  },
+  "presentation": {
+    "pageType": "edit",
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "Manage WQL Categories"
+    },
+    "body": {
+      "id": "bodySection",
+      "type": "section",
+      "children": [
+        {
+          "type": "richText",
+          "enabled": false,
+          "value": "<% `<p>WQL Categories help organize and secure WQL Queries.
+                        <p>Each category is associated with a custom organization where role security can be configured to restrict query access.</p>`
+          %>"
+        },
+        {
+          "type": "grid",
+          "gridType": "LIST",
+          "id": "wQLCategoryGrid",
+          "rows": "<% getWQLCategories.data %>",
+          "rowVariableName": "wQLCategory",
+          "deleteEndPoint": "deleteWQLCategory",
+          "columns": [
+            {
+              "type": "column",
+              "columnId": "nameColumn",
+              "label": "Name",
+              "cellTemplate": {
+                "type": "text",
+                "id": "name",
+                "value": "<% wQLCategory.name %>",
+                "valuesOut": [
+                  {
+                    "valueOutBinding": "createWQLCategory.name",
+                    "value": "<% self.value %>"
+                  },
+                  {
+                    "valueOutBinding": "updateWQLCategory.name",
+                    "value": "<% self.value %>"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "column",
+              "columnId": "organizationColumn",
+              "label": "Organization",
+              "cellTemplate": {
+                "type": "dropdown",
+                "id": "organization",
+                "values": "<% !empty(getCustomOrganizations.data) ? getCustomOrganizations.data : [] %>",
+                "selectedValues": "<% empty wQLCategory.organization ? [] : [wQLCategory.organization.id] %>",
+                "valuesOut": [
+                  {
+                    "valueOutBinding": "createWQLCategory.organization",
+                    "value": "<% empty self.value ? null : { 'id': self.value[0] } %>"
+                  },
+                  {
+                    "valueOutBinding": "updateWQLCategory.organization",
+                    "value": "<% empty self.value ? null : { 'id': self.value[0] } %>"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "column",
+              "columnId": "wQLCategoryIdColumn",
+              "label": "Id",
+              "cellTemplate": {
+                "type": "text",
+                "id": "wQLCategoryId",
+                "value": "<% wQLCategory.id %>",
+                "enabled": false,
+                "valuesOut": [
+                  {
+                    "valueOutBinding": "createWQLCategory.id",
+                    "value": "<% self.value %>"
+                  },
+                  {
+                    "valueOutBinding": "updateWQLCategory.id",
+                    "value": "<% self.value %>"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    }
+  }
+}

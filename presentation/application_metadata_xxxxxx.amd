@@ -1,0 +1,359 @@
+{
+  "appProperties": [],
+  "flowDefinitions": [
+    {
+      "id": "customReports",
+      "flowSteps": [
+        {
+          "id": "customReportsStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "customReportsEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "customReports"
+        },
+        {
+          "id": "customReportsEnd",
+          "endsFlow": true,
+          "taskId": "hub"
+        }
+      ]
+    },
+    {
+      "id": "publicAPI",
+      "flowSteps": [
+        {
+          "id": "publicAPIStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "publicAPIEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "publicAPI"
+        },
+        {
+          "id": "publicAPIEnd",
+          "endsFlow": true,
+          "taskId": "hub"
+        }
+      ]
+    },
+    {
+      "id": "wql",
+      "flowSteps": [
+        {
+          "id": "wqlStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wql"
+        },
+        {
+          "id": "wqlEnd",
+          "endsFlow": true,
+          "taskId": "hub"
+        }
+      ]
+    },
+    {
+      "id": "wqlCreateFlow",
+      "flowSteps": [
+        {
+          "id": "wqlCreateStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlCreateEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wqlCreate"
+        },
+        {
+          "id": "wqlCreateEnd",
+          "endsFlow": true,
+          "taskId": "wqlLibHub"
+        }
+      ]
+    },
+    {
+      "id": "wqlUpdateFlow",
+      "flowSteps": [
+        {
+          "id": "wqlUpdateStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlUpdateEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wqlUpdate"
+        },
+        {
+          "id": "wqlUpdateEnd",
+          "endsFlow": true,
+          "taskId": "wqlLibHub"
+        }
+      ]
+    },
+    {
+      "id": "wqlViewFlow",
+      "flowSteps": [
+        {
+          "id": "wqlViewStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlViewEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wqlView"
+        },
+        {
+          "id": "wqlViewEnd",
+          "endsFlow": true,
+          "taskId": "wqlLibHub"
+        }
+      ]
+    },
+    {
+      "id": "wqlDeleteFlow",
+      "flowSteps": [
+        {
+          "id": "wqlDeleteStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlDeleteEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wqlDelete"
+        },
+        {
+          "id": "wqlDeleteEnd",
+          "endsFlow": true,
+          "taskId": "wqlLibHub"
+        }
+      ]
+    },
+    {
+      "id": "wqlLibFilterFlow",
+      "flowSteps": [
+        {
+          "id": "wqlLibFilterStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlLibFilterEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wqlLibFilter"
+        },
+        {
+          "id": "wqlLibFilterEnd",
+          "endsFlow": true,
+          "taskId": "wqlLibHub"
+        }
+      ]
+    },
+    {
+      "id": "wqlLibCategoryFlow",
+      "flowSteps": [
+        {
+          "id": "wqlLibCategoryStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlLibCategoryEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wqlLibCategory"
+        },
+        {
+          "id": "wqlLibCategoryEnd",
+          "endsFlow": true,
+          "taskId": "wqlLibHub"
+        }
+      ]
+    },
+    {
+      "id": "wqlLibSetupFlow",
+      "flowSteps": [
+        {
+          "id": "wqlLibSetupStart",
+          "transitions": [
+            {
+              "order": "a",
+              "value": "wqlLibSetupEnd",
+              "condition": "true"
+            }
+          ],
+          "startsFlow": true,
+          "taskId": "wqlLibSetup"
+        },
+        {
+          "id": "wqlLibSetupEnd",
+          "endsFlow": true,
+          "taskId": "wqlLibHub"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "customReports",
+      "routingPattern": "/customReports",
+      "page": {
+        "id": "customReports"
+      }
+    },
+    {
+      "id": "hub",
+      "routingPattern": "/",
+      "page": {
+        "id": "hub"
+      }
+    },
+    {
+      "id": "home",
+      "routingPattern": "/home",
+      "page": {
+        "id": "home"
+      }
+    },
+    {
+      "id": "publicAPI",
+      "routingPattern": "/publicAPI",
+      "page": {
+        "id": "publicAPI"
+      }
+    },
+    {
+      "id": "wql",
+      "routingPattern": "/wql",
+      "page": {
+        "id": "wql"
+      }
+    },
+    {
+      "id": "wqlCreate",
+      "routingPattern": "/wqlCreate",
+      "page": {
+        "id": "wqlCreate"
+      }
+    },
+    {
+      "id": "wqlUpdate",
+      "routingPattern": "/wqlUpdate",
+      "page": {
+        "id": "wqlUpdate"
+      }
+    },
+    {
+      "id": "wqlDelete",
+      "routingPattern": "/wqlDelete",
+      "page": {
+        "id": "wqlDelete"
+      }
+    },
+    {
+      "id": "wqlView",
+      "routingPattern": "/wqlView",
+      "page": {
+        "id": "wqlView"
+      }
+    },
+    {
+      "id": "wqlLibHub",
+      "routingPattern": "/wqlLibHub",
+      "page": {
+        "id": "wqlLibHub"
+      }
+    },
+    {
+      "id": "wqlLibDetail",
+      "routingPattern": "/wqlLibDetail",
+      "page": {
+        "id": "wqlLibDetail"
+      }
+    },
+    {
+      "id": "homeWQLNav",
+      "routingPattern": "/homeWQLNav",
+      "page": {
+        "id": "homeWQLNav"
+      }
+    },
+    {
+      "id": "wqlLibFilter",
+      "routingPattern": "/wqlLibFilter",
+      "page": {
+        "id": "wqlLibFilter"
+      }
+    },
+    {
+      "id": "wqlLibCategory",
+      "routingPattern": "/wqlLibCategory",
+      "page": {
+        "id": "wqlLibCategory"
+      }
+    },
+    {
+      "id": "wqlLibSetup",
+      "routingPattern": "/wqlLibSetup",
+      "page": {
+        "id": "wqlLibSetup"
+      }
+    }
+  ],
+  "applicationId": "security_analyzer_kkvxdf",
+  "dataProviders": [
+    {
+      "key": "app",
+      "value": "<% 'https://api.workday.com/apps/' + site.applicationId + '/v1/' %>"
+    },
+    {
+      "key": "workday-staffing",
+      "value": "https://api.workday.com/staffing/v1/"
+    },
+    {
+      "key": "workday-bp",
+      "value": "https://api.workday.com/businessProcess/v1/"
+    },
+    {
+      "key": "workday-common",
+      "value": "https://api.workday.com/common/v1/"
+    },
+    {
+      "key": "workday-wql",
+      "value": "https://api.workday.com/wql/v1/data"
+    },
+    {
+      "key": "workday-person",
+      "value": "https://api.us.wcp.workday.com/person/v4/"
+    }
+  ]
+}

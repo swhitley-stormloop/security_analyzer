@@ -1,0 +1,142 @@
+{
+    "podId": "wqlCRUD",
+    "seed": {
+      "parameters": [],
+      "endPoints": [
+        {
+          "name": "me",
+          "baseUrlType": "workday-common",
+          "url": "workers/me",
+          "authType": "sso"
+        },
+        {
+          "name": "getWQLQueries",
+          "baseUrlType": "app",
+          "url": "<% 'wqlQueries/' + queryParams.instanceId ?? null %>",
+          "authType": "sso",
+          "httpMethod": "GET"
+        },
+        {
+          "name": "getWQLCategories",
+          "baseUrlType": "app",
+          "url": "<% 'wqlCategories' %>",
+          "authType": "sso",
+          "httpMethod": "GET"
+        },    
+        {
+          "name": "getWQLTest",
+          "baseUrlType": "workday-wql",
+          "url": "<%
+                      utils.getWQL(
+                            wql, 
+                            [
+                            ], 
+                            site.appProperties.sharedApplicationId ?? site.applicationId
+                        );
+                      %>",
+          "authType": "sso",
+          "deferred": true
+        },
+        {
+          "name": "searchWorker",
+          "baseUrlType": "workday-common",
+          "url": "<% 'workers?search=' + instanceListQuery %>",
+          "authType": "sso",
+          "deferred": true
+        }            
+      ],      
+      "template": {
+        "type": "section",
+        "children": [
+          {
+            "type": "text",
+            "id": "name",
+            "label": "Name",
+            "required": true,
+            "value": "<% getWQLQueries.name %>",
+            "valuesOut": [
+              {
+                "value": "<% self.value %>",
+                "valueOutBinding": "crudWQL.name"
+              }
+            ]
+          },
+          {
+            "type": "instanceList",
+            "id": "ownerSelection",
+            "label": "Owner",
+            "required": true,
+            "values": "<% !empty(getWQLQueries.owner) ? [getWQLQueries.owner] : !empty(me) ? [me] : [] %>",
+            "selectedValues": "<%  !empty(getWQLQueries.owner) ? [getWQLQueries.owner.id] : !empty(me.id) ? [me.id] : [] %>",
+            "onSearch": "<%
+                          let ownerFromSearch = searchWorker.invoke({'search': event.query});
+                          ownerSelection.values = ownerFromSearch.data.map( row => {
+                                {'id': row.id, 'descriptor': row.descriptor}
+                              });
+                        %>",
+              "valuesOut": [
+                {
+                  "value": "<% self.value[0] ?? null %>",
+                  "valueOutBinding": "crudWQL.owner.id"
+                }
+              ]                      
+          },
+          {
+            "type": "instanceList",
+            "id": "categorySelection",
+            "label": "Category",
+            "values": "<% !empty(getWQLCategories.data) ? getWQLCategories.data.map( ws => {'id': ws.id, 'descriptor': ws.descriptor}) : [] %>",
+            "selectedValues": "<%  !empty(getWQLQueries.category) ? [getWQLQueries.category.id] : [] %>",
+            "valuesOut": [
+                {
+                  "value": "<% self.value[0] ?? null %>",
+                  "valueOutBinding": "crudWQL.category.id"
+                }
+            ]                 
+          },
+          {
+            "type": "externalLink",
+            "label": "",
+            "descriptor": "Convert Report to WQL",
+            "url": "<% '/' + tenant + '/d/task/2997$15571.htmld' %>"
+          },                                                
+          {
+            "type": "textArea",
+            "id": "text",
+            "label": "Query",
+            "value": "<% getWQLQueries.text ?? '' %>",
+            "valuesOut": [
+              {
+                "value": "<% self.value %>",
+                "valueOutBinding": "crudWQL.text"
+              }
+            ]
+          },
+          {
+            "type": "pageActionButton",
+            "id": "testWQL",
+            "label": "Run",
+            "onClick": "<%
+                if (!empty(text.value)) {
+                  let results = getWQLTest.invoke({'wql': text.value});
+                  if (!empty(results)) {
+                    wqlResults.setValue(results);
+                  }
+                }
+            %>"
+          },
+          {
+            "type": "richText",
+            "enabled": false,
+            "id": "wqlResults"
+          },
+          {
+            "type": "richText",
+            "id": "microWidth",
+            "enabled": false,
+            "value": "<span style='margin-left:700px'></span>"
+          }                  
+        ]
+      }
+    }
+  }

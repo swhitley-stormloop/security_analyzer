@@ -1,0 +1,165 @@
+{
+  "id": "wqlLibDetail",
+  "include": [
+    "utils.script"
+  ],
+  "endPoints": [
+    {
+      "name": "getWQLLibSetup",
+      "baseUrlType": "app",
+      "url": "<% 'wqlLibSetup' %>",
+      "authType": "sso",
+      "httpMethod": "GET",
+      "bestEffort": true
+    },    
+    {
+      "name": "getWQLQueries",
+      "baseUrlType": "app",
+      "url": "<% 'wqlQueries/' + queryParams.instanceId ?? null %>",
+      "authType": "sso",
+      "httpMethod": "GET",
+      "exclude": "<% empty(queryParams.instanceId) %>"
+    }
+  ],
+  "presentation": {
+    "pageType": "view",
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "<% !empty(queryParams.instanceId) ? 'WQL Query' : 'WQL Home' %>"
+    },
+    "body": {
+      "type": "section",
+      "id": "bodySection",
+      "children": [
+        {
+          "type": "section",
+          "id": "nav",
+          "render": "<% empty(getWQLQueries) %>",
+          "children": [
+            {
+              "type": "button",
+              "label": "⤺ Back to Security Analyzer Home",
+              "taskReference": {
+                "type": "taskReference",
+                "taskId": "hub"
+              },
+              "action": "LINK",
+              "commandHttpMethod": "GET"
+            },
+            {
+              "type": "richText",
+              "enabled": false,
+              "value": "<% 
+                `Manage your WQL queries in one place.
+                <ul>
+                <li>Click <b>Add</b> to enter a new query.</li>
+                <li>Your most recently updated queries are displayed first.  Use the <b>Filter</b> button to select which queries are displayed.</li>
+                </ul>`
+              %>"
+            },
+            {
+              "type": "section",
+              "horizontal": true,
+              "id": "intentionalHorizontal1",
+              "children": [
+                {
+                  "action": "PRIMARY",
+                  "type": "button",
+                  "id": "addButton",
+                  "label": "Add",
+                  "taskReference": {
+                    "taskId": "wqlCreate"
+                  }
+                },
+                {
+                  "action": "AUXILIARY",
+                  "type": "button",
+                  "id": "filterButton",
+                  "label": "Filter",
+                  "taskReference": {
+                    "taskId": "wqlLibFilter"
+                  }
+                },
+                {
+                  "action": "AUXILIARY",
+                  "type": "button",
+                  "id": "categoryButton",
+                  "label": "Manage Categories",
+                  "taskReference": {
+                    "taskId": "wqlLibCategory"
+                  },
+                  "render": "<% !empty(getWQLLibSetup) ? utils.accessCheck(getWQLLibSetup, 'organizationType')  : false %>"
+                },
+                {
+                  "action": "AUXILIARY",
+                  "type": "button",
+                  "id": "setupButton",
+                  "label": "Setup",
+                  "taskReference": {
+                    "taskId": "wqlLibSetup"
+                  },
+                  "render": "<% !empty(getWQLLibSetup) ? utils.accessCheck(getWQLLibSetup, 'organizationType')  : false %>"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "section",
+          "id": "query",
+          "children": [
+            {
+              "type": "text",
+              "id": "name",
+              "label": "Name",
+              "value": "<% getWQLQueries.name %>"
+            },
+            {
+              "type": "richText",
+              "label": "Query",
+              "value": "<% getWQLQueries.text %>"
+            },
+            {
+              "type": "section",
+              "horizontal": true,
+              "id": "intentionalHorizontal2",
+              "children": [
+                {
+                  "type": "button",
+                  "label": "Edit",
+                  "taskReference": {
+                    "taskId": "wqlUpdate",
+                    "parameterBindings": {
+                      "instanceId": "<% getWQLQueries.id %>"
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "label": "Delete",
+                  "taskReference": {
+                    "taskId": "wqlDelete",
+                    "parameterBindings": {
+                      "instanceId": "<% getWQLQueries.id %>"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "render": "<% !empty(getWQLQueries) %>"
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    }
+  },
+  "securityDomains": [
+    "SetupWQLLibrary",
+    "ManageWQLLibrary"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "home",
+  "endPoints": [],
+  "presentation": {
+    "title": {
+      "type": "title",
+      "label": "Home"
+    },
+    "body": {
+      "type": "section",
+      "horizontal": false,
+      "children": [
+        {
+          "type": "button",
+          "label": "⤺ Back to Home",
+          "taskReference": {
+            "type": "taskReference",
+            "taskId": "hub"
+          },
+          "action": "LINK",
+          "commandHttpMethod": "GET"
+        },
+        {
+          "type": "cardContainer",
+          "cards": [
+            {
+              "type": "card",
+              "cardId": "simpleCard",
+              "parameters": {
+                "title": "Custom Report Security",
+                "subtitle": "Custom Reports",
+                "body": "Identify permissions needed for Custom Reports",
+                "label": "Custom Reports",
+                "icon": "wd-accent-worksheets",
+                "task": "customReports"
+              }
+            },
+            {
+              "type": "card",
+              "cardId": "simpleCard",
+              "parameters": {
+                "title": "Public API Security",
+                "subtitle": "Public API",
+                "body": "Identify permissions needed for the public API",
+                "label": "Public API",
+                "icon": "wd-accent-data-loading",
+                "task": "publicAPI"
+              }
+            },
+            {
+              "type": "card",
+              "cardId": "simpleCard",
+              "parameters": {
+                "title": "WQL Security",
+                "subtitle": "WQL",
+                "body": "Identify permissions needed for WQL Queries",
+                "label": "WQL",
+                "icon": "wd-accent-data-refresh",
+                "task": "wql"
+              }
+            }            
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer"
+    }
+  },
+  "securityDomains": [
+    "ManageSecurityAnalyzer",
+    "SetupSecurityAnalyzer"
+  ]
+}

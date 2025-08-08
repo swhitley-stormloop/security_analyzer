@@ -1,0 +1,65 @@
+{
+  "id": "hub",
+  "include": [
+    "utils.script"
+  ],
+  "endPoints": [
+    {
+      "name": "getWQLCategories",
+      "baseUrlType": "app",
+      "url": "<% 'wqlCategories?limit=1' %>",
+      "authType": "sso",
+      "httpMethod": "GET",
+      "bestEffort": true
+    }
+  ],
+  "presentation": {
+    "body": {
+      "type": "hub",
+      "label": "Security Analyzer",
+      "icon": "wd-accent-shield",
+      "initialTask": {
+        "taskId": "home"
+      },
+      "navigationTasks": [
+        {
+          "label": "Home",
+          "task": {
+            "taskId": "home"
+          },
+          "icon": "wd-icon-globe"
+        },
+        {
+          "label": "WQL Library",
+          "task": {
+            "taskId": "homeWQLNav"
+          },
+          "icon": "wd-icon-document",
+          "render": "<% !empty(getWQLCategories) ? utils.accessCheck(getWQLCategories, 'name')  : false %>"
+        }                     
+      ],
+      "additionalLinks": {
+        "title": "Additional Resources",
+        "links": [     
+          {
+            "type": "external",
+            "label": "Securable Items",
+            "url": "<% '/' + tenant + '/d/task/2997$15031.htmld' %>"
+          },
+          {
+            "type": "external",
+            "label": "Activate Security",
+            "url": "<% '/' + tenant + '/d/task/2997$1904.htmld' %>"
+          }
+        ]
+      }
+    },
+    "footer": {
+      "type": "footer"
+    }
+  },
+  "securityDomains": [
+    "ManageSecurityAnalyzer",
+    "SetupSecurityAnalyzer"
+  ]
+}

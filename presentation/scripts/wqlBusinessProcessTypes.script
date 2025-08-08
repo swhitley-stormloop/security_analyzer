@@ -1,0 +1,15 @@
+var wql = `
+  SELECT 
+  businessProcessType, 
+  tasksThatInitiateBusinessProcessDefinition as webServiceOperation 
+  FROM businessProcessDefinitions 
+  WHERE ON tasksThatInitiateBusinessProcessDefinition task1 in (?) 
+  WHERE tasksThatInitiateBusinessProcessDefinition in (?) 
+  AND tasksThatInitiateBusinessProcessDefinition is not empty
+`;
+
+{
+  "wql": wql
+}
+
+

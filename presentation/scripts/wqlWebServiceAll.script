@@ -1,0 +1,14 @@
+var wql = `
+  SELECT 
+  webService,
+  webServiceOperation 
+  FROM publicWebServices
+  ORDER BY webServiceName
+`;
+
+{
+  "wql": wql
+}
+
+
+

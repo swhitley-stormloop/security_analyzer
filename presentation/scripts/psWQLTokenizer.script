@@ -1,0 +1,568 @@
+// Workday Query Language (WQL) Tokenizer
+// Converts WQL string into tokens for parsing in a single pass.
+
+// Token types
+var TOKEN_TYPES = {
+    "PARAMETERS": 'PARAMETERS',
+    "SELECT": 'SELECT',
+    "FROM": 'FROM',
+    "WHERE": 'WHERE',
+    "ON": 'ON',
+    "GROUP_BY": 'GROUP BY',
+    "ORDER_BY": 'ORDER BY',
+    "HAVING": 'HAVING',
+    "LIMIT": 'LIMIT',
+    "AND": 'AND',
+    "OR": 'OR',
+    "NOT": 'NOT',
+    "IN": 'IN',
+    "IS": 'IS',
+    "NULL": 'NULL',
+    "EMPTY": 'EMPTY',
+    "AS": 'AS',
+    "ASC": 'ASC',
+    "DESC": 'DESC',
+    "DISTINCT": 'DISTINCT',
+    "STARTSWITH": 'STARTSWITH',
+    "ENDSWITH": 'ENDSWITH',
+    "CONTAINS": 'CONTAINS',
+    "NOT_CONTAINS": 'NOT CONTAINS',
+    "NOT_IN": 'NOT IN',
+    "IS_EMPTY": 'IS EMPTY',
+    "IS_NOT_EMPTY": 'IS NOT EMPTY',
+    "AGGREGATION_FUNCTION": 'AGGREGATION_FUNCTION',
+    "DATASOURCE": 'DATASOURCE',
+    "DATASOURCE_FILTER_KEYWORD": 'DATASOURCE_FILTER_KEYWORD',
+    "DATASOURCE_FILTER": 'DATASOURCE_FILTER',
+    "PARAMETER_NAME": 'PARAMETER_NAME',
+    "OBJECT": 'OBJECT',
+    "ALIAS": 'ALIAS',
+    "STRING": 'STRING',
+    "NUMBER": 'NUMBER',
+    "BOOLEAN": 'BOOLEAN',
+    "OPERATOR": 'OPERATOR',
+    "COMMA": 'COMMA',
+    "LPAREN": 'LPAREN',
+    "RPAREN": 'RPAREN',
+    "LBRACE": 'LBRACE',
+    "RBRACE": 'RBRACE',
+    "EQUALS": 'EQUALS',
+    "IN_LIST": 'IN_LIST',
+    "PARAMETER_LIST": 'PARAMETER_LIST',
+    "REFERENCE_ID": 'REFERENCE_ID',
+    "WORKDAY_ID": 'WORKDAY_ID',
+    "DATE": 'DATE',
+    "DATETIME": 'DATETIME',
+    "EOF": 'EOF'
+};
+
+// Keyword, function, and boolean lookups for efficiency
+var KEYWORDS = {
+    'PARAMETERS': true, 'SELECT': true, 'FROM': true, 'WHERE': true, 'ON': true, 'GROUP': true, 'BY': true, 'ORDER': true,
+    'HAVING': true, 'LIMIT': true, 'AND': true, 'OR': true, 'NOT': true, 'IN': true, 'IS': true, 'NULL': true, 'EMPTY': true, 'AS': true,
+    'ASC': true, 'DESC': true, 'STARTSWITH': true, 'ENDSWITH': true, 'CONTAINS': true, 'DISTINCT': true
+};
+
+var AGGREGATION_FUNCTIONS = {
+    'AVG': true, 'COUNT': true, 'MIN': true, 'MAX': true, 'SUM': true
+};
+
+var BOOLEANS = {
+    'TRUE': true, 'FALSE': true
+};
+
+// Create a token object
+var createToken = function(type, value, position) {
+    return { "type": type, "value": value, "position": position };
+};
+
+// Check if character is whitespace
+var isWhitespace = function(char) {
+    return char == ' ' || char == '\t' || char == '\n' || char == '\r';
+};
+
+// Check if character is a digit
+var isDigit = function(char) {
+    return char >= '0' && char <= '9';
+};
+
+// Check if character is alphanumeric or underscore
+var isAlphaNumeric = function(char) {
+    return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') || char == '_';
+};
+
+// Check if string is a keyword using the map
+var isKeyword = function(str) {
+    return KEYWORDS[str.upperCase()] == true;
+};
+
+// Check if string is an aggregation function using the map
+var isAggregationFunction = function(str) {
+    return AGGREGATION_FUNCTIONS[str.upperCase()] == true;
+};
+
+// Check if string is a boolean literal using the map
+var isBoolean = function(str) {
+    return BOOLEANS[str.upperCase()] == true;
+};
+
+// Check if string matches Workday ID format (32-character hex string)
+var isWorkdayId = function(str) {
+    if (str.size() != 32) return false;
+    for (var i = 0; i < str.size(); i++) {
+        var char = str.substring(i, i + 1);
+        if (!((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F'))) {
+            return false;
+        }
+    }
+    return true;
+};
+
+// Check if string matches date format (YYYY-MM-DD)
+var isDateLiteral = function(str) {
+    if (str.size() != 10) return false;
+    return str.substring(4, 5) == '-' && str.substring(7, 8) == '-' &&
+           isDigit(str.substring(0, 1)) && isDigit(str.substring(1, 2)) && 
+           isDigit(str.substring(2, 3)) && isDigit(str.substring(3, 4)) &&
+           isDigit(str.substring(5, 6)) && isDigit(str.substring(6, 7)) &&
+           isDigit(str.substring(8, 9)) && isDigit(str.substring(9, 10));
+};
+
+// Check if string matches datetime format (YYYY-MM-DD HH:MM:SS or YYYY-MM-DD HH:MM:SSZ)
+var isDateTimeLiteral = function(str) {
+    if (str.size() < 19) return false;
+    var datePart = str.substring(0, 10);
+    if (!isDateLiteral(datePart)) return false;
+    if (str.substring(10, 11) != ' ') return false;
+    var timePart = str.substring(11, 19);
+    return timePart.substring(2, 3) == ':' && timePart.substring(5, 6) == ':' &&
+           isDigit(timePart.substring(0, 1)) && isDigit(timePart.substring(1, 2)) &&
+           isDigit(timePart.substring(3, 4)) && isDigit(timePart.substring(4, 5)) &&
+           isDigit(timePart.substring(6, 7)) && isDigit(timePart.substring(7, 8));
+};
+
+// Parse list values (both quoted and unquoted, comma-delimited)
+// Used for both IN clauses and parameter assignments
+var parseList = function(input, startPosition, requireParentheses) {
+    var values = [];
+    var position = startPosition;
+    var inputLength = input.size();
+    var inParentheses = false;
+    
+    // Skip whitespace
+    while (position < inputLength && isWhitespace(input.substring(position, position + 1))) {
+        position++;
+    }
+    
+    // Check if list starts with parentheses
+    if (position < inputLength && input.substring(position, position + 1) == '(') {
+        inParentheses = true;
+        position++; // Skip opening paren
+    } else if (requireParentheses) {
+        // If we require parentheses but don't find them, return empty result
+        return {
+            "values": [],
+            "endPosition": startPosition
+        };
+    }
+    
+    while (position < inputLength) {
+        // Skip whitespace
+        while (position < inputLength && isWhitespace(input.substring(position, position + 1))) {
+            position++;
+        }
+        
+        if (position >= inputLength) break;
+        
+        var char = input.substring(position, position + 1);
+        
+        // Check for end of list
+        if (inParentheses && char == ')') {
+            position++; // Skip closing paren
+            break;
+        } else if (!inParentheses && (char == ')' || isKeyword(peekNextWord(input, position)))) {
+            // End of unparenthesized list when we hit a keyword or closing paren
+            break;
+        }
+        
+        var value = '';
+        
+        // Handle quoted strings
+        if (char == "'" || char == '"') {
+            var quote = char;
+            position++; // Skip opening quote
+            while (position < inputLength && input.substring(position, position + 1) != quote) {
+                value += input.substring(position, position + 1);
+                position++;
+            }
+            if (position < inputLength) {
+                position++; // Skip closing quote
+            }
+            values.add(value);
+        } else {
+            // Handle unquoted values (stop at comma, closing paren, or end)
+            while (position < inputLength) {
+                char = input.substring(position, position + 1);
+                if (char == ',' || (inParentheses && char == ')') || 
+                    (!inParentheses && isWhitespace(char) && isKeyword(peekNextWord(input, position)))) {
+                    break;
+                }
+                if (!isWhitespace(char)) {
+                    value += char;
+                }
+                position++;
+            }
+            if (value.size() > 0) {
+                values.add(value);
+            }
+        }
+        
+        // Skip whitespace after value
+        while (position < inputLength && isWhitespace(input.substring(position, position + 1))) {
+            position++;
+        }
+        
+        // Check for comma
+        if (position < inputLength && input.substring(position, position + 1) == ',') {
+            position++; // Skip comma
+            continue;
+        } else {
+            // No comma, end of list
+            break;
+        }
+    }
+    
+    return {
+        "values": values,
+        "endPosition": position
+    };
+};
+
+// Peek ahead to get the next word (for keyword detection)
+var peekNextWord = function(input, position) {
+    var inputLength = input.size();
+    // Skip whitespace
+    while (position < inputLength && isWhitespace(input.substring(position, position + 1))) {
+        position++;
+    }
+    
+    var word = '';
+    while (position < inputLength && isAlphaNumeric(input.substring(position, position + 1))) {
+        word += input.substring(position, position + 1);
+        position++;
+    }
+    return word;
+};
+
+// Tokenize WQL string
+var tokenize = function(input) {
+    var tokens = [];
+    var position = 0;
+    var inputLength = input.size();
+    
+    // Context flags to determine token types
+    var inParametersClause = false;
+    var inFromClause = false;
+    var inDataSourceParens = false;
+    var expectingAlias = false;
+    var expectingDataSourceFilterValue = false;
+    var expectingParameterValue = false;
+    var expectingInList = false;
+    var expectingParameterList = false;
+
+    while (position < inputLength) {
+        var startPos = position;
+        var char = input.substring(position, position + 1);
+
+        // Skip whitespace
+        if (isWhitespace(char)) {
+            position++;
+            continue;
+        }
+
+        // Handle IN lists when expecting them
+        if (expectingInList) {
+            var listResult = parseList(input, position, false);
+            tokens.add(createToken(TOKEN_TYPES.IN_LIST, listResult.values, startPos));
+            position = listResult.endPosition;
+            expectingInList = false;
+            continue;
+        }
+
+        // Handle parameter lists when expecting them
+        if (expectingParameterList) {
+            var listResult = parseList(input, position, true); // Parameter lists require parentheses
+            if (listResult.values.size() > 0) {
+                tokens.add(createToken(TOKEN_TYPES.PARAMETER_LIST, listResult.values, startPos));
+                position = listResult.endPosition;
+            }
+            expectingParameterList = false;
+            continue;
+        }
+
+        // Handle string literals
+        if (char == "'" || char == '"') {
+            var quote = char;
+            var value = '';
+            position++; // Skip opening quote
+            while (position < inputLength && input.substring(position, position + 1) != quote) {
+                value += input.substring(position, position + 1);
+                position++;
+            }
+            if (position < inputLength) {
+                position++; // Skip closing quote
+            }
+            
+            // Determine if this is a special type of string
+            var tokenType = TOKEN_TYPES.STRING;
+            if (isWorkdayId(value)) {
+                tokenType = TOKEN_TYPES.WORKDAY_ID;
+            } else if (isDateLiteral(value)) {
+                tokenType = TOKEN_TYPES.DATE;
+            } else if (isDateTimeLiteral(value)) {
+                tokenType = TOKEN_TYPES.DATETIME;
+            }
+            
+            tokens.add(createToken(tokenType, value, startPos));
+            expectingAlias = false;
+            expectingDataSourceFilterValue = false;
+            expectingParameterValue = false;
+            continue;
+        }
+
+        // Handle numbers
+        if (isDigit(char) || (char == '.' && position + 1 < inputLength && isDigit(input.substring(position + 1, position + 2)))) {
+            var numValue = '';
+            var hasDecimal = false;
+            while (position < inputLength) {
+                var currentChar = input.substring(position, position + 1);
+                if (isDigit(currentChar)) {
+                    numValue += currentChar;
+                } else if (currentChar == '.' && !hasDecimal) {
+                    numValue += currentChar;
+                    hasDecimal = true;
+                } else {
+                    break;
+                }
+                position++;
+            }
+            tokens.add(createToken(TOKEN_TYPES.NUMBER, numValue, startPos));
+            expectingAlias = false;
+            expectingParameterValue = false;
+            continue;
+        }
+
+        // Handle single-character tokens and operators
+        if (char == '(') {
+            tokens.add(createToken(TOKEN_TYPES.LPAREN, '(', startPos));
+            var lastToken = tokens.size() > 1 ? tokens.get(tokens.size() - 2) : null;
+            if (lastToken && lastToken.type == TOKEN_TYPES.DATASOURCE) {
+                inDataSourceParens = true;
+            }
+            position++;
+            continue;
+        }
+        if (char == ')') {
+            tokens.add(createToken(TOKEN_TYPES.RPAREN, ')', startPos));
+            inDataSourceParens = false;
+            expectingDataSourceFilterValue = false;
+            expectingParameterValue = false;
+            position++;
+            continue;
+        }
+        if (char == '{') {
+            tokens.add(createToken(TOKEN_TYPES.LBRACE, '{', startPos));
+            position++;
+            continue;
+        }
+        if (char == '}') {
+            tokens.add(createToken(TOKEN_TYPES.RBRACE, '}', startPos));
+            position++;
+            continue;
+        }
+        if (char == ',') {
+            tokens.add(createToken(TOKEN_TYPES.COMMA, ',', startPos));
+            expectingDataSourceFilterValue = false;
+            expectingParameterValue = false;
+            position++;
+            continue;
+        }
+        if (char == '=') {
+            tokens.add(createToken(TOKEN_TYPES.EQUALS, '=', startPos));
+            // Check the token *before* the '=', which is at index size() - 2
+            var prevToken = tokens.size() > 1 ? tokens.get(tokens.size() - 2) : null;
+            if (prevToken) {
+                if (prevToken.type == TOKEN_TYPES.DATASOURCE_FILTER_KEYWORD) {
+                    expectingDataSourceFilterValue = true;
+                } else if (prevToken.type == TOKEN_TYPES.PARAMETER_NAME) {
+                    expectingParameterValue = true;
+                } else if (inDataSourceParens && prevToken.type == TOKEN_TYPES.OBJECT) {
+                    // Check if next non-whitespace char is '(' to determine if it's a list
+                    var peekPos = position + 1;
+                    while (peekPos < inputLength && isWhitespace(input.substring(peekPos, peekPos + 1))) {
+                        peekPos++;
+                    }
+                    if (peekPos < inputLength && input.substring(peekPos, peekPos + 1) == '(') {
+                        expectingParameterList = true;
+                    }
+                }
+            }
+            position++;
+            continue;
+        }
+        if (char == '<' || char == '>' || char == '!') {
+            var nextChar = position + 1 < inputLength ? input.substring(position + 1, position + 2) : null;
+            if (char == '<' && nextChar == '>') {
+                tokens.add(createToken(TOKEN_TYPES.OPERATOR, '<>', startPos));
+                position += 2;
+            } else if (char == '<' && nextChar == '=') {
+                tokens.add(createToken(TOKEN_TYPES.OPERATOR, '<=', startPos));
+                position += 2;
+            } else if (char == '>' && nextChar == '=') {
+                tokens.add(createToken(TOKEN_TYPES.OPERATOR, '>=', startPos));
+                position += 2;
+            } else if (char == '!' && nextChar == '=') {
+                tokens.add(createToken(TOKEN_TYPES.OPERATOR, '!=', startPos));
+                position += 2;
+            } else {
+                tokens.add(createToken(TOKEN_TYPES.OPERATOR, char, startPos));
+                position++;
+            }
+            continue;
+        }
+
+        // Handle identifiers, keywords, and multi-word keywords
+        if (isAlphaNumeric(char)) {
+            var item = '';
+            var tempPos = position;
+            while (tempPos < inputLength && isAlphaNumeric(input.substring(tempPos, tempPos + 1))) {
+                item += input.substring(tempPos, tempPos + 1);
+                tempPos++;
+            }
+
+            var upperItem = item.upperCase();
+            var tokenType;
+
+            // Single-pass multi-word keyword check
+            var nextWord = '';
+            var thirdWord = '';
+            var posAfterNext = tempPos;
+            var posAfterThird = -1;
+            
+            // Peek ahead for next words
+            var peekPos = tempPos;
+            while (peekPos < inputLength && isWhitespace(input.substring(peekPos, peekPos + 1))) peekPos++;
+            if (peekPos < inputLength && isAlphaNumeric(input.substring(peekPos, peekPos + 1))) {
+                posAfterNext = peekPos;
+                while (posAfterNext < inputLength && isAlphaNumeric(input.substring(posAfterNext, posAfterNext + 1))) {
+                    nextWord += input.substring(posAfterNext, posAfterNext + 1);
+                    posAfterNext++;
+                }
+                peekPos = posAfterNext;
+                while (peekPos < inputLength && isWhitespace(input.substring(peekPos, peekPos + 1))) peekPos++;
+                if (peekPos < inputLength && isAlphaNumeric(input.substring(peekPos, peekPos + 1))) {
+                    posAfterThird = peekPos;
+                     while (posAfterThird < inputLength && isAlphaNumeric(input.substring(posAfterThird, posAfterThird + 1))) {
+                        thirdWord += input.substring(posAfterThird, posAfterThird + 1);
+                        posAfterThird++;
+                    }
+                }
+            }
+            
+            // Check for 3-word keywords first
+            if (upperItem == 'IS' && nextWord.upperCase() == 'NOT' && thirdWord.upperCase() == 'EMPTY') {
+                tokens.add(createToken(TOKEN_TYPES.IS_NOT_EMPTY, 'is not empty', startPos));
+                position = posAfterThird;
+                continue;
+            }
+            
+            // Check for 2-word keywords
+            if (upperItem == 'NOT' && nextWord.upperCase() == 'CONTAINS') {
+                tokens.add(createToken(TOKEN_TYPES.NOT_CONTAINS, 'not contains', startPos));
+                position = posAfterNext;
+                continue;
+            }
+            if (upperItem == 'NOT' && nextWord.upperCase() == 'IN') {
+                tokens.add(createToken(TOKEN_TYPES.NOT_IN, 'not in', startPos));
+                position = posAfterNext;
+                expectingInList = true;
+                continue;
+            }
+            if (upperItem == 'IS' && nextWord.upperCase() == 'EMPTY') {
+                tokens.add(createToken(TOKEN_TYPES.IS_EMPTY, 'is empty', startPos));
+                position = posAfterNext;
+                continue;
+            }
+            if (upperItem == 'GROUP' && nextWord.upperCase() == 'BY') {
+                tokens.add(createToken(TOKEN_TYPES.GROUP_BY, 'group by', startPos));
+                position = posAfterNext;
+                continue;
+            }
+            if (upperItem == 'ORDER' && nextWord.upperCase() == 'BY') {
+                tokens.add(createToken(TOKEN_TYPES.ORDER_BY, 'order by', startPos));
+                position = posAfterNext;
+                continue;
+            }
+            
+            // If not a multi-word keyword, process as a single identifier
+            position = tempPos; // Commit position change
+
+            if (expectingDataSourceFilterValue) {
+                tokenType = TOKEN_TYPES.DATASOURCE_FILTER;
+                expectingDataSourceFilterValue = false;
+            } else if (isKeyword(item)) {
+                tokenType = upperItem;
+                if (tokenType == TOKEN_TYPES.PARAMETERS) {
+                    inParametersClause = true; inFromClause = false; inDataSourceParens = false;
+                } else if (tokenType == TOKEN_TYPES.FROM) {
+                    inFromClause = true; inParametersClause = false; inDataSourceParens = false;
+                } else if (tokenType == TOKEN_TYPES.AS) {
+                    expectingAlias = true;
+                } else if (tokenType == TOKEN_TYPES.IN) {
+                    expectingInList = true;
+                } else if (tokenType == TOKEN_TYPES.SELECT || tokenType == TOKEN_TYPES.WHERE) {
+                    inParametersClause = false; inFromClause = false; inDataSourceParens = false;
+                }
+            } else if (expectingParameterValue) {
+                tokenType = TOKEN_TYPES.OBJECT;
+                expectingParameterValue = false;
+            } else if (expectingAlias) {
+                tokenType = TOKEN_TYPES.ALIAS;
+                expectingAlias = false;
+            } else if (inParametersClause && upperItem != 'PARAMETERS') {
+                tokenType = TOKEN_TYPES.PARAMETER_NAME;
+            } else if (inFromClause) {
+                tokenType = TOKEN_TYPES.DATASOURCE;
+                inFromClause = false;
+            } else if (inDataSourceParens) {
+                tokenType = (upperItem == 'DATASOURCEFILTER') ? TOKEN_TYPES.DATASOURCE_FILTER_KEYWORD : TOKEN_TYPES.OBJECT;
+            } else if (isAggregationFunction(item)) {
+                tokenType = TOKEN_TYPES.AGGREGATION_FUNCTION;
+            } else if (isBoolean(item)) {
+                tokenType = TOKEN_TYPES.BOOLEAN;
+            } else if (isWorkdayId(item)) {
+                tokenType = TOKEN_TYPES.WORKDAY_ID;
+            } else {
+                tokenType = TOKEN_TYPES.OBJECT; // Default
+            }
+            
+            tokens.add(createToken(tokenType, item, startPos));
+            continue;
+        }
+
+        // If character is unknown, advance position to avoid infinite loop
+        position++;
+    }
+
+    tokens.add(createToken(TOKEN_TYPES.EOF, null, position));
+    return tokens;
+};
+
+// Main entry point for tokenization
+var tokenizeWQL = function(wql) {
+    return tokenize(wql);
+};
+
+{
+    "tokenizeWQL": tokenizeWQL
+}

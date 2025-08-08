@@ -1,0 +1,84 @@
+{
+  "id": "wqlDelete",
+  "endPoints": [
+    {
+      "name": "getWQLQueries",
+      "baseUrlType": "app",
+      "url": "<% 'wqlQueries/' + queryParams.instanceId ?? null %>",
+      "authType": "sso",
+      "httpMethod": "GET"
+    }
+  ],
+  "script": "",
+  "presentation": {
+    "pageType": "edit",
+    "micro": true,
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "Delete WQL Queries"
+    },
+    "body": {
+      "type": "section",
+      "id": "bodySection",
+      "children": [
+        {
+          "type": "richText",
+          "enabled": false,
+          "value": "Delete this item?"
+        },
+        {
+          "type": "text",
+          "id": "name",
+          "label": "Name",
+          "enabled": false,
+          "value": "<% getWQLQueries.name %>"
+        },
+        {
+          "type": "richText",
+          "id": "microWidth",
+          "enabled": false,
+          "value": "<span style='margin-left:700px'></span>"
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    },
+    "microFirstPageOnly": true
+  },
+  "outboundData": {
+    "outboundEndPoints": [
+      {
+        "name": "deleteWQL",
+        "baseUrlType": "app",
+        "url": "<% 'wqlQueries/' + queryParams.instanceId %>",
+        "authType": "sso",
+        "httpMethod": "DELETE",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      }
+    ],
+    "responseErrorDetail": {
+      "errorSummary": "<% 
+          if (error.contains('Attempt to delete instance')) {
+            return 'This item is in use and cannot be deleted.';
+          }
+          return error;
+      %>",
+      "errors": "<% empty errors ? [] : [error].join(errors.map(err => { err.error } )) %>"
+    }
+  },
+  "securityDomains": [
+    "ManageWQLLibrary",
+    "SetupWQLLibrary"
+  ]
+}

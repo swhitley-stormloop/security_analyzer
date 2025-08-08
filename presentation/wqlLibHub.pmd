@@ -1,0 +1,75 @@
+{
+  "id": "wqlLibHub",
+  "include": [
+    "utils.script",
+    "wqlWQLLib.script"
+  ],
+  "endPoints": [
+    {
+      "name": "getWQLLib",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  const limit = 19;
+                  const name = !empty(pmdSessionVariables.query_name) ? pmdSessionVariables.query_name : '';
+                  const dateFrom = !empty(pmdSessionVariables.from_dt) ? pmdSessionVariables.from_dt : utils.minDate;
+                  const dateTo = !empty(pmdSessionVariables.to_dt) ? pmdSessionVariables.to_dt : utils.maxDate;
+                  const offset = !empty(pmdSessionVariables.query_page) ? ((number:convertStringToInt(pmdSessionVariables.query_page + '') - 1) * limit) : '0';
+
+
+                  utils.getWQL(
+                        wqlWQLLib.wql, 
+                        [
+                          name,
+                          dateFrom,
+                          dateTo
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    ) + '&limit=' + limit + '&offset=' + offset;
+                  %>",
+      "authType": "sso",
+      "bestEffort": true,
+      "responseErrorDetail": {
+        "errorSummary": "<% [error].addAll(errors.map(e => {e.error})).join('\\n') %>"
+      }
+    }
+  ],
+  "presentation": {
+    "title": {
+      "type": "title",
+      "label": "WQL Hub"
+    },
+    "body": {
+      "type": "listDetailHub",
+      "label": "<% 'WQL Library' %>",
+      "icon": "wd-accent-clipboard-checklist",
+      "items": "<% 
+                let nav = [{'query':{'id': null, 'descriptor': 'Home'}}];
+                let data = getWQLLib.data;
+                if (!empty(data)) {
+                  nav = list:join(nav, data);
+                }
+
+                return nav;
+     %>",
+      "itemVariableName": "query",
+      "navigationTemplate": {
+        "label": "<% empty(query.query.id) ? '📁 ' + query.query.descriptor : '📄 ' + query.query.descriptor %>",
+        "icon": "<%%>",
+        "task": {
+          "taskId": "wqlLibDetail",
+          "parameters": {
+            "instanceId": "<% query.query.id %>"
+          }
+        }
+      }
+    },
+    "footer": {
+      "type": "footer",
+      "children": []
+    }
+  },
+  "securityDomains": [
+    "ManageWQLLibrary",
+    "SetupWQLLibrary"
+  ]
+}

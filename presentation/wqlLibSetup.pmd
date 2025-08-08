@@ -1,0 +1,127 @@
+{
+  "id": "wqlLibSetup",
+  "include": [
+    "utils.script",
+    "wqlCustomOrganizationTypes.script"
+  ],
+  "endPoints": [
+    {
+      "name": "getAppSetup",
+      "baseUrlType": "app",
+      "url": "<% 'wqlLibSetup' %>",
+      "authType": "sso",
+      "httpMethod": "GET"
+    },
+    {
+      "name": "getOrganizationTypes",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  utils.getWQL(
+                        wqlCustomOrganizationTypes.wql, 
+                        [], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    );
+                  %>",
+      "authType": "sso"
+    }
+  ],
+  "securityDomains": [
+    "SetupWQLLibrary"
+  ],
+  "script": "",
+  "presentation": {
+    "pageType": "edit",
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "WQL Library Setup"
+    },
+    "body": {
+      "type": "basicFormLayout",
+      "id": "bodySection",
+      "sections": [
+        {
+          "type": "layoutSection",
+          "children": [
+            {
+              "enabled": false,
+              "visible": false,
+              "type": "text",
+              "id": "wqlLibSetupId",
+              "value": "<% !(empty getAppSetup.data) ? getAppSetup.data[0].id : null %>"
+            },
+            {
+              "type": "richText",
+              "label": "Organization Type",
+              "enabled": false,
+              "value": "Enter the organization type that will be used for the organization list on WQL Category"
+            },
+            {
+              "type": "instanceList",
+              "id": "orgTypeSelection",
+              "label": "Select an Organization Type",
+              "required": true,
+              "values": "<% getOrganizationTypes.data.distinct().sort().map( ot => {'id': ot.type[0].id, 'descriptor': ot.type[0].descriptor}) %>",
+              "selectedValues": "<% !(empty getAppSetup.data) ? [getAppSetup.data[0].organizationType] : [] %>",
+              "valuesOut": [
+                {
+                  "value": "<% self.selectedEntries[0].id %>",
+                  "valueOutBinding": "createWQLLibSetup.organizationType"
+                },
+                {
+                  "value": "<% self.selectedEntries[0].id %>",
+                  "valueOutBinding": "updateWQLLibSetup.organizationType"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    }
+  },
+  "outboundData": {
+    "outboundEndPoints": [
+      {
+        "exclude": "<% ! (empty wqlLibSetupId.value) %>",
+        "name": "createWQLLibSetup",
+        "baseUrlType": "app",
+        "url": "wqlLibSetup",
+        "authType": "sso",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      },
+      {
+        "exclude": "<% empty wqlLibSetupId.value %>",
+        "httpMethod": "PUT",
+        "baseUrlType": "app",
+        "name": "updateWQLLibSetup",
+        "url": "<% 'wqlLibSetup/' + wqlLibSetupId.value %>",
+        "allowEmptyValue": true,
+        "authType": "sso",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      }
+    ],
+    "responseErrorDetail": {
+      "errorSummary": "<% error %>",
+      "errors": "<% empty errors ? [] : [error].join(errors.map(err => { err.error } )) %>"
+    }
+  }
+}

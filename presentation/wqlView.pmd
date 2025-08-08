@@ -1,0 +1,90 @@
+{
+  "id": "wqlView",
+  "endPoints": [
+    {
+      "name": "getWQLQueries",
+      "baseUrlType": "app",
+      "url": "<% 'wqlQueries/' + queryParams.instanceId ?? null %>",
+      "authType": "sso",
+      "httpMethod": "GET"
+    }
+  ],
+  "script": "",
+  "presentation": {
+    "pageType": "view",
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "View WQL Query"
+    },
+    "body": {
+      "type": "section",
+      "id": "bodySection",
+      "children": [
+        {
+          "type": "button",
+          "label": "⤺ Back to WQL Library Home",
+          "taskReference": {
+            "type": "taskReference",
+            "taskId": "wqlLibHub"
+          },
+          "action": "LINK",
+          "commandHttpMethod": "GET"
+        },
+        {
+          "type": "text",
+          "id": "name",
+          "label": "Name",
+          "value": "<% getWQLQueries.name %>"
+        },
+        {
+          "type": "richText",
+          "label": "Query",
+          "value": "<% getWQLQueries.text %>"
+        },
+        {
+          "type": "section",
+          "horizontal": true,
+          "id": "intentionalHorizontal",
+          "children": [
+            {
+              "type": "button",
+              "label": "Edit",
+              "taskReference": {
+                "taskId": "wqlUpdate",
+                "parameterBindings": {
+                  "instanceId": "<% getWQLQueries.id %>"
+                }
+              }
+            },
+            {
+              "type": "button",
+              "label": "Delete",
+              "taskReference": {
+                "taskId": "wqlDelete",
+                "parameterBindings": {
+                  "instanceId": "<% getWQLQueries.id %>"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "richText",
+          "id": "microWidth",
+          "enabled": false,
+          "value": "<span style='margin-left:700px'></span>"
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    }
+  },
+  "securityDomains": [
+    "ManageWQLLibrary",
+    "SetupWQLLibrary"
+  ]
+}

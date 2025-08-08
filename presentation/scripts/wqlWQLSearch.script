@@ -1,0 +1,13 @@
+var wql = `
+  SELECT 
+  WQLQuery,
+  name,
+  text 
+  FROM {applicationId}_wqlQueries
+  WHERE name contains '?'
+`;
+
+{
+  "wql": wql
+}
+

@@ -1,0 +1,7 @@
+{
+  "id": 4,
+  "name": "SetupWQLLibrary",
+  "enabledForPageSecurity": true,
+  "enabledForOrchestrationSecurity": false,
+  "label": "Setup: WQL Library"
+}

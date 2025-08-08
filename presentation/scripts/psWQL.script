@@ -1,0 +1,124 @@
+var btnAnalyze_onClick = function(tenantName) {
+
+      const wqlKeys = ['Name', 'Secured by Domains', 'Result', 'Account Has Domains'];
+      
+      errorMsg.clearError();
+
+      if (empty(accountSelection.selectedEntries) || empty(text.value) ) {
+        errorMsg.setError('Required fields are missing.');
+        return null;
+      }                      
+
+      parsedWQL.setValue(psWQLTokenizer.tokenizeWQL(text.value));      
+      
+      // WQLAlias Lists
+      let fieldList = json:query(parsedWQL.value, '$[?(@.type=="OBJECT")].value').distinct();
+      let dataSourceList = json:query(parsedWQL.value, '$[?(@.type=="DATASOURCE")].value').distinct();
+      let dsFilterList = json:query(parsedWQL.value, '$[?(@.type=="DATASOURCE_FILTER")].value').distinct();
+
+      // WQL Security
+      let wqlSecurity = getWQLSecurity.invoke(
+        {
+          'fieldList': '"' + fieldList.join('","') + '"',
+          'dsFilterList': '"' + dsFilterList.join('","') + '"',
+          'dataSourceList': '"' + dataSourceList.join('","') + '"'
+          
+        }
+      );
+      
+      if (empty(wqlSecurity.data[0].fields)) {
+        errorMsg.setError('Error reading report fields.'); 
+        return null;                       
+      }
+
+      // Begin - Secured By Domains
+      let securityFieldList = json:query(wqlSecurity, '$.data[0].fields[*].securityFields[*].id').distinct();
+      let securityFieldListCSV =  securityFieldList.join(',');
+      let wqlSecurityFields = getFieldSecurity.invoke({'wids': securityFieldListCSV });
+
+      let fieldDomainList = json:query(wqlSecurity, '$.data[0].fields[*].domain[*].id').distinct();
+      // Picks up domains needed for fields in calculated fields
+      let securityFieldDomainList = json:query(wqlSecurityFields, '$.data[*].domain[*].id').distinct();
+      fieldDomainList = list:join(fieldDomainList, securityFieldDomainList);
+
+      let dataSourceDomainList = wqlSecurity.data[0].domain.map( domain => domain.id);
+      let securedByDomainsList = list:join(fieldDomainList, dataSourceDomainList);
+      let dsFilterDomainsList = json:query(wqlSecurity, '$.data[0].dsFilter[*].domain[*].id').distinct();
+      if (!empty(wqlSecurity.data[0].dsFilter.dsFilter.id)) {
+        dsFilterDomainsList = list:join(securedByDomainsList, [wqlSecurity.data[0].dsFilter.dsFilter.id]);
+        securedByDomainsList = list:join(securedByDomainsList, dsFilterDomainsList);
+      }
+      let securedByDomainsCSV = securedByDomainsList.join(',');
+      // End - Secured By Domains
+
+
+      // Get Security Groups for the account, limited by the needed domains.
+      let accountSecurity = getSecurityGroupsByDomainAndAccount.invoke({'domains': securedByDomainsCSV, 'accounts': accountSelection.selectedEntries[0].id });
+
+      // Unique Account Domain List
+      let accountDomainList = json:query(accountSecurity, '$.data[*].domains[*].id').distinct();
+
+      let fields = wqlSecurity.data[0].fields.map( field => {
+        let columns = {:};
+        columns.add(wqlKeys[0], field.field.descriptor  + utils.objLink(tenantName, field.field));
+        // Calculated field domains
+        if (empty(field.domain) && !empty(field.securityFields)) {
+          field.securityFields.map( securityField => {
+            let fld = wqlSecurityFields.data.filter( f => f.field.id == securityField.id);
+            if (!empty(fld)) {
+              field.domain = list:join(field.domain, fld[0].domain);
+            }
+          });
+          field.domain = field.domain.distinct().sort();
+        }
+        if (!empty(field.domain)) {
+          let fieldDomains = field.domain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>');
+          let hasDomains = field.domain.filter( domain => list:contains(accountDomainList, domain.id));
+          let hasDomainsOutput = hasDomains.map( domain => domain.descriptor  + utils.objLink(tenantName, domain)).join('<br/>');
+          columns.add(wqlKeys[1], fieldDomains);
+          columns.add(wqlKeys[2], utils.resultInd(hasDomainsOutput));
+          columns.add(wqlKeys[3], hasDomainsOutput);
+        }
+        return columns;
+      });
+
+    // Field Grid
+    let dataObj = {:};                  
+    dataObj.wqlKeys = wqlKeys;
+    dataObj.wqlResult = fields; 
+    dataObj.wqlResultsError = wqlSecurity.error;
+    resultsGrid.setData(dataObj);
+
+
+    // Data Source and Data Filter
+    dataObj = {:};
+    dataObj.wqlKeys = wqlKeys;
+
+    let rows = [];
+    let columns = {:};
+    columns.add(wqlKeys[0], wqlSecurity.data[0].dataSource.descriptor + utils.objLink(tenantName, wqlSecurity.data[0].dataSource) + ' (Data Source)');
+    columns.add(wqlKeys[1], wqlSecurity.data[0].domain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>'));
+    let hasDataSourceDomain = wqlSecurity.data[0].domain.filter( domain => list:contains(accountDomainList, domain.id));
+    columns.add(wqlKeys[2], utils.resultInd(hasDataSourceDomain));
+    columns.add(wqlKeys[3], hasDataSourceDomain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>'));
+    rows.add(columns);
+
+    if ( !empty(wqlSecurity.data[0].dsFilter[0].dsFilter.descriptor)) {
+      columns = {:};
+      columns.add(wqlKeys[0], wqlSecurity.data[0].dsFilter[0].dsFilter.descriptor + utils.objLink(tenantName, wqlSecurity.data[0].dsFilter[0].dsFilter) + ' (Data Source Filter)');
+      columns.add(wqlKeys[1], wqlSecurity.data[0].dsFilter[0].domain.map( domain => domain.descriptor  + utils.objLink(tenantName, domain)).join('<br/>'));
+      let hasFilterDomain = wqlSecurity.data[0].dsFilter[0].domain.filter( domain => list:contains(accountDomainList, domain.id));
+      columns.add(wqlKeys[2], utils.resultInd(hasFilterDomain));
+      columns.add(wqlKeys[3], hasFilterDomain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>'));
+      rows.add(columns);
+    }
+
+    dataObj.wqlResult = rows; 
+    dataObj.wqlResultsError = wqlSecurity.error;
+    dsGrid.setData(dataObj);
+
+};
+
+{
+  "btnAnalyze_onClick": btnAnalyze_onClick
+}

@@ -1,0 +1,9 @@
+var wql = `
+    SELECT 
+    type1 as type
+    FROM customOrganizations
+`;
+
+{
+  "wql": wql
+}

@@ -1,0 +1,61 @@
+{
+  "id": "wqlUpdate",
+  "include": [
+    "utils.script",
+    "wqlAccountSearch.script"
+  ],
+  "endPoints": [],
+  "script": "",
+  "presentation": {
+    "pageType": "edit",
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "Update WQL Query"
+    },
+    "body": {
+      "type": "section",
+      "id": "bodySection",
+      "children": [
+        {
+          "type": "pod",
+          "podId": "wqlCRUD"
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    },
+    "micro": true,
+    "microFirstPageOnly": true
+  },
+  "outboundData": {
+    "outboundEndPoints": [
+      {
+        "name": "crudWQL",
+        "baseUrlType": "app",
+        "url": "<% 'wqlQueries/' + queryParams.instanceId %>",
+        "authType": "sso",
+        "httpMethod": "PUT",
+        "failOnStatusCodes": [
+          {
+            "code": 400
+          },
+          {
+            "code": 403
+          }
+        ]
+      }
+    ],
+    "responseErrorDetail": {
+      "errorSummary": "<% error %>",
+      "errors": "<% empty errors ? [] : [error].join(errors.map(err => { err.error } )) %>"
+    }
+  },
+  "securityDomains": [
+    "ManageWQLLibrary",
+    "SetupWQLLibrary"
+  ]
+}

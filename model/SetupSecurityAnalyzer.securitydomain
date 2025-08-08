@@ -1,0 +1,7 @@
+{
+  "id": 2,
+  "name": "SetupSecurityAnalyzer",
+  "enabledForPageSecurity": true,
+  "enabledForOrchestrationSecurity": false,
+  "label": "Setup: Security Analyzer"
+}

@@ -1,0 +1,57 @@
+{
+    "podId": "accountSearch",
+    "seed": {
+      "parameters": [],
+      "endPoints": [
+        {
+          "baseUrlType": "workday-common",
+          "name": "userInfo",
+          "authType": "sso",
+          "url": "userInfo",
+          "httpMethod": "GET"
+        },
+        {
+          "name": "searchAccount",
+          "baseUrlType": "workday-wql",
+          "url": "<%
+                      utils.getWQL(
+                            wqlAccountSearch.wql, 
+                            [
+                              search,
+                              search
+                            ], 
+                            site.appProperties.sharedApplicationId ?? site.applicationId
+                        );
+                      %>",
+          "authType": "sso",
+          "deferred": true
+        }
+      ],
+      "template":        
+        {
+          "type": "section",
+          "children": [
+            {
+              "type": "instanceList",
+              "id": "accountSelection",
+              "label": "Select an Account",
+              "required": true,
+              "values": "<% !empty(userInfo.data[0].userName) ? [{'id': userInfo.data[0].workdayID, 'descriptor': userInfo.data[0].userName.split(';').last() + ' / ' + userInfo.data[0].fullName }] : [] %>",
+              "selectedValues": "<%  !empty(userInfo.data[0].workdayID) ? [userInfo.data[0].workdayID] : null %>",
+              "onSearch": "<%
+                            let accountFromSearch = searchAccount.invoke({'search': event.query});
+                            securityGroups.setValue(json:stringify(accountFromSearch));
+                            accountSelection.values = accountFromSearch.data.map( row => {
+                                  {'id': row.workdayAccount.id, 'descriptor': row.workdayAccount.descriptor}
+                                });
+                          %>"
+            },
+            {
+              "id": "securityGroups",
+              "type": "readOnlyText",
+              "value": ""
+            }                    
+          ]
+        }
+  }
+}

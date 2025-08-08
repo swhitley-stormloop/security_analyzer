@@ -1,0 +1,146 @@
+{
+  "id": "wqlLibFilter",
+  "include": [
+    "utils.script"
+  ],
+  "endPoints": [],
+  "outboundData": {
+    "outboundEndPoints": [
+      {
+        "type": "outboundVariable",
+        "name": "query_name",
+        "values": [
+          {
+            "outboundPath": "query_name",
+            "value": "<% queryName.value ?? null %>"
+          }
+        ],
+        "variableScope": "session"
+      },
+      {
+        "type": "outboundVariable",
+        "name": "query_page",
+        "values": [
+          {
+            "outboundPath": "query_page",
+            "value": "<% queryPage.value ?? null %>"
+          }
+        ],
+        "variableScope": "session"
+      },
+      {
+        "type": "outboundVariable",
+        "name": "from_dt",
+        "values": [
+          {
+            "outboundPath": "from_dt",
+            "value": "<% !empty(fromDate.value) ? fromDate.value.format(utils.iso8601Format) : null %>"
+          }
+        ],
+        "variableScope": "session"
+      },
+      {
+        "type": "outboundVariable",
+        "name": "to_dt",
+        "values": [
+          {
+            "outboundPath": "to_dt",
+            "value": "<% !empty(toDate.value) ? toDate.value.format(utils.iso8601Format) : null %>"
+          }
+        ],
+        "variableScope": "session"
+      }
+    ]
+  },
+  "presentation": {
+    "title": {
+      "type": "title",
+      "label": "Set a filter for the WQL Library"
+    },
+    "pageType": "EDIT",
+    "micro": true,
+    "microFirstPageOnly": true,
+    "body": {
+      "type": "section",
+      "horizontal": false,
+      "children": [
+        {
+          "type": "text",
+          "label": "Query Name Contains",
+          "id": "queryName",
+          "value": "<%
+                    if (!empty(pmdSessionVariables.query_name)) {
+                      pmdSessionVariables.query_name;
+                    }
+          %>"
+        },
+        {
+          "datePrecision": "DAY",
+          "type": "date",
+          "label": "From Date",
+          "id": "fromDate",
+          "value": "<%
+                    if (!empty(pmdSessionVariables.from_dt)) {
+                      return pmdSessionVariables.from_dt;
+                    }
+
+                    return date:parse(utils.minDate).formatWithTimeZone(utils.iso8601Format, userTimeZone);
+ 
+           %>",
+          "dateFormat": "<% utils.iso8601Format %>",
+          "displayTimeZone": "<% userTimeZone %>"
+        },
+        {
+          "datePrecision": "DAY",
+          "type": "date",
+          "id": "toDate",
+          "label": "To Date",
+          "value": "<%
+                    if (!empty(pmdSessionVariables.to_dt)){
+                        return pmdSessionVariables.to_dt
+                    }
+
+                    return date:parse(utils.maxDate).formatWithTimeZone(utils.iso8601Format, userTimeZone);
+
+                    %>",
+          "onChange": "<%
+                       if(! empty(fromDate.value) && ! empty (toDate.value)){
+                           if(toDate.value < fromDate.value){
+                               toDate.setError('To Date must be after From Date.')
+                           }
+                               else if(toDate.value > fromDate.value){
+                               toDate.clearError();
+                           }
+                               else{
+                               toDate.clearError();
+                           }
+                       }
+                       %>",
+          "displayTimeZone": "<% userTimeZone %>",
+          "dateFormat": "<% utils.iso8601Format %>"
+        },
+        {
+          "type": "number",
+          "id": "queryPage",
+          "label": "Go To WQL Library Page",
+          "fractionDigits": 0,
+          "value": "<%
+                    if (!empty(pmdSessionVariables.query_page)) {
+                      return pmdSessionVariables.query_page;
+                    }
+
+                    return 0;
+          %>"
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "children": []
+    }
+  },
+  "securityDomains": [
+    "ManageWQLLibrary",
+    "SetupWQLLibrary"
+  ]
+}

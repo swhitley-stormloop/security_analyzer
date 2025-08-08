@@ -1,0 +1,289 @@
+{
+  "id": "wql",
+  "include": [
+    "utils.script",
+    "psWQL.script",
+    "wqlAccountSearch.script",
+    "psWQLTokenizer.script",
+    "wqlWQLSearch.script",
+    "wqlWQLSecurity.script",
+    "wqlSecurityGroupsByDomainAndAccount.script",
+    "wqlFieldSecurity.script",
+    "wqlWQLList.script"
+  ],
+  "endPoints": [
+    {
+      "name": "getWQLQueries",
+      "baseUrlType": "app",
+      "url": "<% 'wqlQueries/' + queryParams.instanceId ?? null %>",
+      "authType": "sso",
+      "httpMethod": "GET"
+    },
+    {
+      "name": "getWQLList",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  utils.getWQL(
+                        wqlWQLList.wql, 
+                        [
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    );
+                  %>",
+      "authType": "sso"
+    },
+    {
+      "name": "searchWQL",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  utils.getWQL(
+                        wqlWQLSearch.wql, 
+                        [
+                          search
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    );
+                  %>",
+      "authType": "sso",
+      "deferred": true
+    },
+    {
+      "name": "getWQLSecurity",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  utils.getWQL(
+                        wqlWQLSecurity.wql, 
+                        [
+                          fieldList,
+                          dsFilterList,
+                          dataSourceList
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    );
+                  %>",
+      "authType": "sso",
+      "deferred": true
+    },
+    {
+      "name": "getFieldSecurity",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  utils.getWQL(
+                        wqlFieldSecurity.wql, 
+                        [
+                          wids
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    );
+                  %>",
+      "authType": "sso",
+      "deferred": true
+    },
+    {
+      "name": "getSecurityGroupsByDomainAndAccount",
+      "baseUrlType": "workday-wql",
+      "url": "",
+      "authType": "sso",
+      "httpMethod": "POST",
+      "deferred": true,
+      "onSend": "<%
+        {
+          'query': utils.buildWQL(
+                        wqlSecurityGroupsByDomainAndAccount.wql, 
+                        [
+                          domains,
+                          accounts
+                        ], 
+                        site.appProperties.sharedApplicationId ?? site.applicationId
+                    )
+        }
+      %>"
+    }
+  ],
+  "presentation": {
+    "pageType": "edit",
+    "title": {
+      "type": "title",
+      "id": "title",
+      "label": "Security Analyzer"
+    },
+    "body": {
+      "type": "section",
+      "id": "bodySection",
+      "children": [
+        {
+          "type": "section",
+          "horizontal": true,
+          "children": [
+            {
+              "type": "section",
+              "id": "left",
+              "children": [
+                {
+                  "enabled": false,
+                  "type": "richText",
+                  "value": "<% `<h1>WQL</h1>
+                                <p>Security Analyzer identifies WQL permission needs.</p>
+                                <p>Select an account and enter a Query, then click <b>Analyze</b>.</p>`
+                  %>"
+                },
+                {
+                  "type": "pod",
+                  "podId": "accountSearch"
+                },
+                {
+                  "type": "richText",
+                  "id": "errorMsg",
+                  "enabled": false
+                },
+                {
+                  "type": "textArea",
+                  "id": "text",
+                  "label": "Query",
+                  "required": true,
+                  "value": "<% getWQLQueries.text ?? null%>",
+                  "valuesOut": [
+                    {
+                      "value": "<% self.value %>",
+                      "valueOutBinding": "updateWQL.text"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "section",
+              "id": "right",
+              "children": [
+                {
+                  "type": "instanceList",
+                  "id": "wqlSelection",
+                  "label": "WQL Library",
+                  "values": "<% !empty(getWQLList.data) ? getWQLList.data.map( row => {
+                                      {'id': row.query.id, 'descriptor': row.query.descriptor}
+                                }) : [] %>",
+                  "onSearch": "<%
+                                pageVariables.wqlFromSearch = searchWQL.invoke({'search': event.query});
+                                if (!empty(pageVariables.wqlFromSearch)) {
+                                  wqlSelection.values = pageVariables.wqlFromSearch.data.map( row => {
+                                        {'id': row.WQLQuery.id, 'descriptor': row.WQLQuery.descriptor}
+                                  });
+                                }
+                  %>",
+                  "onChange": "<%
+                                if (!empty(wqlSelection.selectedEntries)) {
+                                  pageVariables.wqlFromSearch = searchWQL.invoke({'search': wqlSelection.selectedEntries[0].descriptor});
+                                  if (!empty(pageVariables.wqlFromSearch.data)) {
+                                    name.setValue(wqlSelection.selectedEntries[0].descriptor); 
+                                    text.setValue(pageVariables.wqlFromSearch.data.filter(query => query.WQLQuery.id == wqlSelection.selectedEntries[0].id)[0].text); 
+                                    wqlLink.setUrl('/' + tenant + '/d/wday/app/' + site.applicationId + '/' + site.applicationId + '/wqlView.htmld?instanceId=' + wqlSelection.selectedEntries[0].id);
+                                  }
+                                }
+
+                  %>"
+                },
+                {
+                  "type": "fieldSet",
+                  "id": "wqlLibrary",
+                  "children": [
+                    {
+                      "type": "externalLink",
+                      "id": "wqlLink",
+                      "label": "Query Lookup",
+                      "descriptor": "WQL Library Lookup",
+                      "url": "<% '/' + tenant + '/d/wday/app/' + site.applicationId + '/' + site.applicationId + '/wqlLibHub.htmld' %>"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "name",
+                  "label": "Name",
+                  "enabled": false,
+                  "value": "<% getWQLQueries.name ?? '(empty)' %>",
+                  "valuesOut": [
+                    {
+                      "value": "<% self.value %>",
+                      "valueOutBinding": "updateWQL.name"
+                    }
+                  ]
+                },
+                {
+                  "type": "checkBox",
+                  "label": "Show/Hide WQL Parsing Output",
+                  "onChange": "<%
+                          empty(pageVariables.visible) ? pageVariables.visible = false : null;
+                          pageVariables.visible = !pageVariables.visible;
+                          fldParseWQL.setVisible(pageVariables.visible);
+                  %>"
+                },
+                {
+                  "type": "fieldSet",
+                  "id": "fldParseWQL",
+                  "visible": false,
+                  "children": [
+                    {
+                      "type": "pageActionButton",
+                      "id": "parseWQLButton",
+                      "label": "Parse",
+                      "onClick": "<% parsedWQL.setValue(psWQLTokenizer.tokenizeWQL(text.value)) %>"
+                    },
+                    {
+                      "type": "textArea",
+                      "id": "parsedWQL",
+                      "label": "Parsed Query"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "pageActionButton",
+          "id": "btnAnalyze",
+          "label": "Analyze",
+          "onClick": "<% psWQL.btnAnalyze_onClick(tenant) %>"
+        },
+        {
+          "type": "pod",
+          "podId": "resultsGrid",
+          "parameters": {
+            "gridId": "resultsGrid",
+            "label": "Fields"
+          }
+        },
+        {
+          "type": "pod",
+          "podId": "resultsGrid",
+          "parameters": {
+            "gridId": "dsGrid",
+            "label": "Data Source and Data Source Filter"
+          }
+        },
+        {
+          "type": "editButtonBar",
+          "editButtons": [
+            {
+              "buttonType": "AUXILIARY",
+              "ignoreRequiredFields": "true",
+              "type": "editButton",
+              "id": "home",
+              "label": "Home"
+            }
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "id": "footer",
+      "children": []
+    },
+    "standardEditButtonsHidden": true
+  },
+  "securityDomains": [
+    "ManageSecurityAnalyzer",
+    "SetupSecurityAnalyzer"
+  ]
+}

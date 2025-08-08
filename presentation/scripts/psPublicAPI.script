@@ -1,0 +1,74 @@
+var btnAnalyze_onClick = function(tenantName) {
+                      
+  const wqlKeys = ['Name', 'Secured by Domains or Business Process Type', 'Result', 'Account Has Domains'];
+
+  errorMsg.clearError();
+  if (empty(accountSelection.selectedEntries) || empty(webServiceOpSelection.selectedEntries) ) {
+    errorMsg.setError('Required fields are missing.');
+    return null;
+  }
+
+  let webServiceSecurity = getWebServiceSecurity.invoke({'wid': (webServiceSelection.selectedEntries[0].id ?? null)});
+
+  if (!chkShowWebService.value) {
+    let path = string:formatMessage('$.data[?(@.webServiceOperation.id == "{0}")]', webServiceOpSelection.selectedEntries[0].id);
+    webServiceSecurity = {'data': json:query(webServiceSecurity, path)};
+  }
+
+  let allWids = json:query(webServiceSecurity, '$.data[*].webServiceOperation.id', true);
+  let widsWithDomains = json:query(webServiceSecurity, '$.data[?(@.domain)].webServiceOperation.id', true);
+  let operationWids = allWids.removeAll(widsWithDomains);
+  if (operationWids.size() > 100) {
+    operationWids = operationWids.subList(0, 100);
+  }
+  allWids = null;
+  widsWithDomains = null;
+
+  // INVOKE - getBusinessProcessTypes
+  let businessProcessTypes = getBusinessProcessTypes.invoke({'wids': operationWids.join(',')});
+
+  
+
+  // Unique Field Domain List                      
+  let domainList = json:query(webServiceSecurity, '$.data[*].domain[*].id').distinct().join(',');
+
+  // INVOKE - getSecurityGroupsByDomainAndAccount
+  // Get domains that the account can access limited to the needed domains.
+  let securityGroupsById = getSecurityGroupsByDomainAndAccount.invoke({'domains': domainList, 'accounts': accountSelection.selectedEntries[0].id });
+  domainList = null;
+
+  // Unique Account Domain List
+  let accountDomainList = json:query(securityGroupsById, '$.data[*].domains[*].id').distinct();
+
+  if (webServiceSecurity.data.size() > 100) {
+    webServiceSecurity.data = webServiceSecurity.data.subList(0, 100);
+  }
+  let rows = webServiceSecurity.data.map( column => {
+    let columns = {:};
+    columns.add(wqlKeys[0], column.webServiceOperation.descriptor);
+    if (!empty(column.domain)) {
+      let domains = column.domain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>');
+      columns.add(wqlKeys[1], domains);
+      let hasDomain = column.domain.filter( domain => list:contains(accountDomainList, domain.id));
+      columns.add(wqlKeys[2], utils.resultInd(hasDomain));
+      columns.add(wqlKeys[3], hasDomain.map( domain => domain.descriptor + utils.objLink(tenantName, domain)).join('<br/>'));
+    }
+    else {
+      let path = string:formatMessage('$.data[?(@.webServiceOperation[?(@.id == "{0}")])]', column.webServiceOperation.id);
+      let bp = json:query(businessProcessTypes, path);
+      columns.add('Secured by Domains or Business Process Type',  (!empty(bp[0].businessProcessType.descriptor) ? bp[0].businessProcessType.descriptor + ' (Business Process Type)' : 'Business Process Type' ) + ' (<a href="/' + tenantName + '/d/inst/' + column.webServiceOperation.id + '/rel-task/2997$15099.htmld">↗</a>)');
+    }
+    return columns;
+  });
+
+  // Data Grid
+  let dataObj = {:};                  
+  dataObj.wqlKeys = wqlKeys;
+  dataObj.wqlResult = rows; 
+  dataObj.wqlResultsError = webServiceSecurity.error;
+  resultsGrid.setData(dataObj);
+};
+
+{
+  "btnAnalyze_onClick": btnAnalyze_onClick
+}

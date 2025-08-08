@@ -1,0 +1,185 @@
+{
+  "podId": "resultsGrid",
+  "seed": {
+    "parameters": [
+      "gridId",
+      "label"
+    ],
+    "template": {
+      "type": "dynamicSection",
+      "id": "<% @@gridId@@ %>",
+      "data": "<% [] %>",
+      "dataVariableName": "data",
+      "children": [
+        {
+          "type": "textArea",
+          "label": "Error",
+          "render": "<% !(empty data.wqlResultsError) %>",
+          "enabled": "false",
+          "value": "<% data.wqlResultsError.join('\\r\\n') %>"
+        },
+        {
+          "type": "fieldSet",
+          "title": "<% @@label@@ %>",
+          "render": "<% !empty data.wqlResult %>",
+          "children": [
+            {
+              "type": "grid",
+              "label": "Results",
+              "id": "queryResultsGrid",
+              "render": "<% !empty data.wqlResult %>",
+              "enabled": "false",
+              "columns": [
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[0] %>",
+                  "sortableAndFilterable": true,
+                  "id": "col0",
+                  "render": "<% data.wqlKeys.size() > 0 %>",
+                  "columnId": "0",
+                  "cellTemplate": {
+                    "type": "richText",
+                    "enabled": false,
+                    "value": "<% row[data.wqlKeys[0]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[1] %>",
+                  "sortableAndFilterable": true,
+                  "id": "col1",
+                  "render": "<% data.wqlKeys.size() > 1 %>",
+                  "columnId": "1",
+                  "cellTemplate": {
+                    "type": "richText",
+                    "enabled": false,
+                    "value": "<% row[data.wqlKeys[1]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[2] %>",
+                  "sortableAndFilterable": true,
+                  "id": "col2",
+                  "render": "<% data.wqlKeys.size() > 2 %>",
+                  "columnId": "2",
+                  "cellTemplate": {
+                    "type": "richText",
+                    "enabled": false,
+                    "value": "<% row[data.wqlKeys[2]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[3] %>",
+                  "sortableAndFilterable": true,                  
+                  "id": "col3",
+                  "render": "<% data.wqlKeys.size() > 3 %>",
+                  "columnId": "3",
+                  "cellTemplate": {
+                    "type": "richText",
+                    "enabled": false,
+                    "value": "<% row[data.wqlKeys[3]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[4] %>",
+                  "sortableAndFilterable": true,                  
+                  "id": "col4",
+                  "render": "<% data.wqlKeys.size() > 4 %>",
+                  "columnId": "4",
+                  "cellTemplate": {
+                    "type": "richText",
+                    "enabled": false,
+                    "value": "<% row[data.wqlKeys[4]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[5] %>",
+                  "id": "col5",
+                  "render": "<% data.wqlKeys.size() > 5 %>",
+                  "columnId": "5",
+                  "cellTemplate": {
+                    "type": "text",
+                    "value": "<% row[data.wqlKeys[5]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[6] %>",
+                  "id": "col6",
+                  "render": "<% data.wqlKeys.size() > 6 %>",
+                  "columnId": "6",
+                  "cellTemplate": {
+                    "type": "text",
+                    "value": "<% row[data.wqlKeys[6]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[7] %>",
+                  "id": "col7",
+                  "render": "<% data.wqlKeys.size() > 7 %>",
+                  "columnId": "7",
+                  "cellTemplate": {
+                    "type": "text",
+                    "value": "<% row[data.wqlKeys[7]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[8] %>",
+                  "id": "col8",
+                  "render": "<% data.wqlKeys.size() > 8 %>",
+                  "columnId": "8",
+                  "cellTemplate": {
+                    "type": "text",
+                    "value": "<% row[data.wqlKeys[8]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[9] %>",
+                  "id": "col9",
+                  "render": "<% data.wqlKeys.size() > 9 %>",
+                  "columnId": "9",
+                  "cellTemplate": {
+                    "type": "text",
+                    "value": "<% row[data.wqlKeys[9]] %>"
+                  }
+                },
+                {
+                  "type": "column",
+                  "label": "<% data.wqlKeys[10] %>",
+                  "id": "col10",
+                  "render": "<% data.wqlKeys.size() > 10 %>",
+                  "columnId": "10",
+                  "cellTemplate": {
+                    "type": "text",
+                    "value": "<% row[data.wqlKeys[10]] %>"
+                  }
+                }
+              ],
+              "rows": "<% data.wqlResult %>",
+              "rowVariableName": "row",
+              "doNotAdd": "true",
+              "doNotRemove": "true",
+              "doNotPutInTab": true,
+              "configurable": true,
+              "selectionEnabled": "false"
+            }
+          ]
+        },
+        {
+          "type": "textArea",
+          "label": "Raw Results",
+          "visible": false,
+          "enabled": "false",
+          "value": "<% !(empty data.wqlResult) ? json:asJSON(data.wqlResult) : 'No Results Returned' %>"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+var wql = `
+  SELECT 
+  dataSource, 
+  domain2 as domain,
+  WQLAlias,
+  dataSourceFilters{dataSource, dataSourceFilter1 as dsFilter, domain2 as domain, WQLAlias} as dsFilter,
+  allReportFields{field, domain, WQLAlias, reportFieldsUsedForSecurity as securityFields} as fields
+  FROM dataSources 
+  WHERE ON allReportFields WQLAlias IN (?) 
+  WHERE ON dataSourceFilters WQLAlias IN (?) 
+  WHERE WQLAlias IN (?)
+ 
+`;
+
+{
+  "wql": wql
+}
+
+

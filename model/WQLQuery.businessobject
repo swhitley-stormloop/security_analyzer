@@ -1,0 +1,65 @@
+{
+  "id": 1,
+  "name": "WQLQuery",
+  "label": "WQL Query",
+  "defaultSecurityDomains": [
+    "ManageWQLLibrary",
+    "SetupWQLLibrary"
+  ],
+  "defaultCollection": {
+    "name": "wqlQueries",
+    "label": "WQL Queries"
+  },
+  "fields": [
+    {
+      "enableSearch": true,
+      "enableIndex": true,
+      "isPurgeable": false,
+      "useForDisplay": true,
+      "isReferenceId": false,
+      "type": "TEXT",
+      "name": "name",
+      "id": 1
+    },
+    {
+      "enableSearch": false,
+      "enableIndex": false,
+      "isPurgeable": false,
+      "useForDisplay": false,
+      "isReferenceId": false,
+      "type": "TEXT",
+      "name": "text",
+      "id": 2
+    },
+    {
+      "enableSearch": false,
+      "enableIndex": false,
+      "isPurgeable": false,
+      "useForDisplay": false,
+      "isReferenceId": false,
+      "type": "TEXT",
+      "name": "description",
+      "id": 3
+    },
+    {
+      "id": 4,
+      "name": "owner",
+      "type": "SINGLE_INSTANCE",
+      "useForDisplay": false,
+      "isPurgeable": false,
+      "target": "WORKER",
+      "secureByTarget": true,
+      "enableReportingFromTarget": true
+    },
+    {
+      "id": 5,
+      "name": "category",
+      "type": "SINGLE_INSTANCE",
+      "useForDisplay": false,
+      "isPurgeable": false,
+      "target": "WQLCategory",
+      "secureByTarget": true,
+      "enableReportingFromTarget": false
+    }
+  ]
+}

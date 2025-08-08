@@ -1,0 +1,97 @@
+const minDate = '1900-01-01';
+const maxDate = '9999-12-31';
+const iso8601Format  = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+const dateDisplayPattern = "MM/dd/yyyy hh:mm:ss.SSS a";
+
+var getFromMoment = function() {
+  return date:format(date:now("US/Pacific").minusDays(30), iso8601Format);
+};
+
+// accessCheck - Used to check for the presence of a field to determine access.
+// This can be used to check for certain permissions by granting field-level access to a security domain.
+var accessCheck = function(json, fieldName) {
+
+  if (!empty(json)) {
+     if (json:query(json, '$.total', false) == 0)  {
+        return true;
+     }
+  }
+  if (empty json) {
+    return false;
+  }
+  if (!(empty json:query(json, '$.data[0].' + fieldName, false))) {
+    return true;
+  }
+  
+  return false;
+};
+
+var buildWQL = function(query, parameters, applicationId) {
+  if (!empty(parameters) && list:isList(parameters)) {
+    for (let ndx = 0; ndx <= parameters.size() - 1; ndx++) { 
+      query = regex:replaceOnce(query, '\?', parameters[ndx]);
+    } 
+  }
+
+  return string:replace(query, '{applicationId}', applicationId);
+  
+};
+
+var getWQL = function(query, parameters, applicationId) {
+  
+  query = buildWQL(query, parameters, applicationId);
+
+  return '?query=' + query.urlEncode();
+
+}
+
+var resultInd = function (hasDomains, needsDomains, calcField) {
+  const green = '✅';
+  const red = '🟥';
+  const yellow = '⚠️ Warning: Calculated fields may require additional domains.  Use <b>Include All Referenced Fields</b> to view all fields.';
+
+  if (empty(hasDomains)) {
+    return red;
+  }
+
+  if (hasDomains.size() == 0) {
+    return red;
+  }
+
+  if (empty(needsDomains) && empty(calcField)) {
+    return green;
+  }
+
+  if (calcField == true) {
+     if (hasDomains.size() == needsDomains.size()) {
+        return green;
+      }
+      else {
+        return yellow;
+      }       
+  }
+  else {
+    return green;
+  }
+
+  return  red;
+
+};
+
+var objLink = function(tenant_name, item) {
+  return ' (<a href="/' + tenant_name + '/d/wid/' + item.id + '">↗</a>)'
+}
+
+
+{
+  "getWQL": getWQL,
+  "buildWQL": buildWQL,
+  "minDate": minDate,
+  "maxDate": maxDate,
+  "iso8601Format": iso8601Format,
+  "mdyFormat": dateDisplayPattern,
+  "accessCheck": accessCheck,
+  "getFromMoment": getFromMoment,
+  "resultInd": resultInd,
+  "objLink": objLink
+}

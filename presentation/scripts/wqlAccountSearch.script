@@ -1,0 +1,13 @@
+var wql = `
+  SELECT 
+  workdayAccount, 
+  username, 
+  userName1
+  FROM allWorkdayAccounts 
+  WHERE username contains '?'
+  OR fullName1 contains '?'
+`;
+
+{
+  "wql": wql
+}
