@@ -17,8 +17,10 @@ var btnAnalyze_onClick = function(tenantName) {
       }
 
       // Analyze All Referenced Fields
-      if (chkAllFields.value == true) {
-        rptSecurity.data[0].fields = rptSecurity.data[0].allFields;
+      if (!empty(chkAllFields.value)) {
+        if (chkAllFields.value == true) {
+          rptSecurity.data[0].fields = rptSecurity.data[0].allFields;
+        }
       }
 
       // Security Fields
@@ -114,21 +116,23 @@ var btnAnalyze_onClick = function(tenantName) {
 
 
   // Minimum Domains Needed
-  if (chkDomainSuggestion.value) {
-    // Build the map for each field/row with the list of domains.
-    let minimumDomainMap = {:};
-    for (let i=0; i < rptSecurity.data[0].fields.size(); i++ ) {
-      if (!empty(rptSecurity.data[0].fields[i].domain)) {
-        minimumDomainMap.add('Row ' + i, rptSecurity.data[0].fields[i].domain.map(domain => domain.descriptor));
+  if (!empty(chkDomainSuggestion.value)) {
+    if (chkDomainSuggestion.value == true) {
+      // Build the map for each field/row with the list of domains.
+      let minimumDomainMap = {:};
+      for (let i=0; i < rptSecurity.data[0].fields.size(); i++ ) {
+        if (!empty(rptSecurity.data[0].fields[i].domain)) {
+          minimumDomainMap.add('Row ' + i, rptSecurity.data[0].fields[i].domain.map(domain => domain.descriptor));
+        }
       }
+      rptSecurity.data[0].dataSource.domain.map( domain => minimumDomainMap.add('Row Data Source', [domain.descriptor]));
+      if ( !empty(rptSecurity.data[0].dsFilter.dsFilter.domain)) {
+        minimumDomainMap.add('Row Data Filter', rptSecurity.data[0].dsFilter.dsFilter.domain.map(domain => domain.descriptor));
+      }
+      let minDomainResult = minDomainList.findMinimumDomains( minimumDomainMap );
+      mdlSection.setData(minDomainResult); 
+      mdlSection.setVisible(true);       
     }
-    rptSecurity.data[0].dataSource.domain.map( domain => minimumDomainMap.add('Row Data Source', [domain.descriptor]));
-    if ( !empty(rptSecurity.data[0].dsFilter.dsFilter.domain)) {
-      minimumDomainMap.add('Row Data Filter', rptSecurity.data[0].dsFilter.dsFilter.domain.map(domain => domain.descriptor));
-    }
-    let minDomainResult = minDomainList.findMinimumDomains( minimumDomainMap );
-    mdlSection.setData(minDomainResult); 
-    mdlSection.setVisible(true);       
   }                           
 };
 

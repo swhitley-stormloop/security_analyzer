@@ -153,7 +153,6 @@
                       "type": "checkBox",
                       "label": "Include All Referenced Fields",
                       "id": "chkAllFields",
-                      "value": false,
                       "guide": {
                         "type": "guide",
                         "id": "chkAllFieldsGuide",
@@ -164,7 +163,6 @@
                       "type": "checkBox",
                       "label": "Generate a Minimum Domain List",
                       "id": "chkDomainSuggestion",                      
-                      "value": false,
                       "guide": {
                         "type": "guide",
                         "id": "chkDomainSuggestionGuide",

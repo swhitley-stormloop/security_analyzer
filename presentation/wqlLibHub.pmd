@@ -6,28 +6,47 @@
   ],
   "endPoints": [
     {
-      "name": "getWQLLib",
+      "name": "getWQLLibTotal",
       "baseUrlType": "workday-wql",
       "url": "<%
-                  const limit = 19;
+                  pageVariables.limit = 19;
                   const name = !empty(pmdSessionVariables.query_name) ? pmdSessionVariables.query_name : '';
                   const dateFrom = !empty(pmdSessionVariables.from_dt) ? pmdSessionVariables.from_dt : utils.minDate;
                   const dateTo = !empty(pmdSessionVariables.to_dt) ? pmdSessionVariables.to_dt : utils.maxDate;
-                  const offset = !empty(pmdSessionVariables.query_page) ? ((number:convertStringToInt(pmdSessionVariables.query_page + '') - 1) * limit) : '0';
+                  const offset = '0';
 
-
-                  utils.getWQL(
-                        wqlWQLLib.wql, 
-                        [
-                          name,
-                          dateFrom,
-                          dateTo
-                        ], 
-                        site.appProperties.sharedApplicationId ?? site.applicationId
-                    ) + '&limit=' + limit + '&offset=' + offset;
+                  pageVariables.getWQLLib = utils.getWQL(
+                                                wqlWQLLib.wql, 
+                                                [
+                                                  name,
+                                                  dateFrom,
+                                                  dateTo
+                                                ], 
+                                                site.appProperties.sharedApplicationId ?? site.applicationId
+                                            ) + '&limit=' + pageVariables.limit;
+                  return  pageVariables.getWQLLib + '&offset=' + offset;
                   %>",
       "authType": "sso",
-      "bestEffort": true,
+      "responseErrorDetail": {
+        "errorSummary": "<% [error].addAll(errors.map(e => {e.error})).join('\\n') %>"
+      }
+    },    
+    {
+      "name": "getWQLLib",
+      "baseUrlType": "workday-wql",
+      "url": "<%
+                  let offset = !empty(pmdSessionVariables.query_page) ? ((number:convertStringToInt(pmdSessionVariables.query_page + '') - 1) * pageVariables.limit) : '0';
+
+                  if (empty(getWQLLibTotal.total)) {
+                    offset = '0';
+                  } else if (getWQLLibTotal.total <= offset) {
+                    offset = '0';
+                  }
+
+                  return  pageVariables.getWQLLib + '&offset=' + offset;
+
+                  %>",
+      "authType": "sso",
       "responseErrorDetail": {
         "errorSummary": "<% [error].addAll(errors.map(e => {e.error})).join('\\n') %>"
       }

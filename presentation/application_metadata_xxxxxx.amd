@@ -9,7 +9,7 @@
           "transitions": [
             {
               "order": "a",
-              "value": "customReportsEnd",
+               "value": "customReportsEnd",
               "condition": "true"
             }
           ],
