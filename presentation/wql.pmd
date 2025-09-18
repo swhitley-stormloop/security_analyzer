@@ -156,6 +156,11 @@
               "id": "right",
               "children": [
                 {
+                  "type": "richText",
+                  "enabled": false,
+                  "value": "<% `Show the guides by clicking the <b>?</b> on the top right of the banner on this page.`%>"
+                },                
+                {
                   "type": "instanceList",
                   "id": "wqlSelection",
                   "label": "WQL Library",
@@ -183,6 +188,19 @@
                   %>"
                 },
                 {
+                  "type": "text",
+                  "id": "name",
+                  "label": "Name",
+                  "enabled": false,
+                  "value": "<% getWQLQueries.name ?? '(empty)' %>",
+                  "valuesOut": [
+                    {
+                      "value": "<% self.value %>",
+                      "valueOutBinding": "updateWQL.name"
+                    }
+                  ]
+                },                
+                {
                   "type": "fieldSet",
                   "id": "wqlLibrary",
                   "children": [
@@ -196,17 +214,14 @@
                   ]
                 },
                 {
-                  "type": "text",
-                  "id": "name",
-                  "label": "Name",
-                  "enabled": false,
-                  "value": "<% getWQLQueries.name ?? '(empty)' %>",
-                  "valuesOut": [
-                    {
-                      "value": "<% self.value %>",
-                      "valueOutBinding": "updateWQL.name"
-                    }
-                  ]
+                  "type": "checkBox",
+                  "label": "Include Related Fields",
+                  "id": "chkRelatedFields",
+                  "guide": {
+                    "type": "guide",
+                    "id": "chkRelatedFieldsGuide",
+                    "text": "By default, only fields from the primary business object are included.  Checking this box will change the display to include all related fields.  This will result in slower processing time."
+                  }
                 },
                 {
                   "type": "checkBox",

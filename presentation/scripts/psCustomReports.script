@@ -60,10 +60,13 @@ var btnAnalyze_onClick = function(tenantName) {
           calcField = true;
           field.securityFields.map( securityField => {
             let fld = wqlSecurityFields.data.filter( f => f.field.id == securityField.id);
-            if (!empty(fld)) {
+            if (!empty(fld[0].domain)) {
               field.domain = list:join(field.domain, fld[0].domain);
             }
           });
+          if (empty(field.domain)) {
+            field.domain = [];
+          }
           field.domain = field.domain.distinct().sort();
         }                        
         if (!empty(field.domain)) {

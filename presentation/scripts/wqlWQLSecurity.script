@@ -8,7 +8,8 @@ var wql = `
   FROM dataSources 
   WHERE ON allReportFields WQLAlias IN (?) 
   WHERE ON dataSourceFilters WQLAlias IN (?) 
-  WHERE WQLAlias IN (?)
+  WHERE ?
+  AND allReportFields IS NOT EMPTY
  
 `;
 

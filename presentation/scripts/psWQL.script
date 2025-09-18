@@ -1,8 +1,11 @@
 var btnAnalyze_onClick = function(tenantName) {
 
       const wqlKeys = ['Name', 'Secured by Domains', 'Result', 'Account Has Domains'];
+      const limitWarning = "The Field output list has been limited to avoid timeout errors. Consider analyzing a subset of the query fields.";
+      
       
       errorMsg.clearError();
+      errorMsg.clearWarning();
 
       if (empty(accountSelection.selectedEntries) || empty(text.value) ) {
         errorMsg.setError('Required fields are missing.');
@@ -12,7 +15,23 @@ var btnAnalyze_onClick = function(tenantName) {
       parsedWQL.setValue(psWQLTokenizer.tokenizeWQL(text.value));      
       
       // WQLAlias Lists
-      let fieldList = json:query(parsedWQL.value, '$[?(@.type=="OBJECT")].value').distinct();
+      let fieldList = json:query(parsedWQL.value, '$[?(@.type=="FIELD")].value').distinct();
+      let rboFieldList = json:query(parsedWQL.value, '$[?(@.type=="RBO_FIELD")].value').distinct();
+      let rboNameList = json:query(parsedWQL.value, '$[?(@.type=="RBO_NAME")].value').distinct();
+
+      if (chkRelatedFields.value ?? false == true) {
+        if (rboFieldList.size() > 7) {
+          rboFieldList = rboFieldList.subList(0, 8);
+          errorMsg.setWarning(limitWarning);
+        }
+        if (rboNameList.size() > 7) {
+          rboNameList = rboNameList.subList(0, 8);
+          errorMsg.setWarning(limitWarning);
+        }
+      }
+
+      fieldList = list:join(fieldList, rboNameList);
+      fieldList = list:join(fieldList, rboFieldList);
       let dataSourceList = json:query(parsedWQL.value, '$[?(@.type=="DATASOURCE")].value').distinct();
       let dsFilterList = json:query(parsedWQL.value, '$[?(@.type=="DATASOURCE_FILTER")].value').distinct();
 
@@ -21,10 +40,24 @@ var btnAnalyze_onClick = function(tenantName) {
         {
           'fieldList': '"' + fieldList.join('","') + '"',
           'dsFilterList': '"' + dsFilterList.join('","') + '"',
-          'dataSourceList': '"' + dataSourceList.join('","') + '"'
-          
+          'dataSourceList': 'WQLAlias IN (' + '"' + dataSourceList.join('","') + '")'          
         }
-      );
+      );    
+
+
+      if (chkRelatedFields.value ?? false == true) {
+        if (!empty(rboFieldList)) {
+          let wqlRBOSecurity = getWQLSecurity.invoke(
+            {
+              'fieldList': '"' + rboFieldList.join('","') + '"',
+              'dsFilterList': '""',
+              'dataSourceList': 'dataSource IS NOT EMPTY'          
+            }
+          );
+          wqlRBOSecurity.data[0].fields.map( field => wqlSecurity.data[0].fields.add(field));
+        }
+      }
+
       
       if (empty(wqlSecurity.data[0].fields)) {
         errorMsg.setError('Error reading report fields.'); 
