@@ -8,15 +8,20 @@
     "wqlCustomReportSecurity.script",
     "wqlSecurityGroupsByDomainAndAccount.script",
     "minDomainList.script",
-    "wqlFieldSecurity.script"
+    "wqlFieldSecurity.script",
+    "wqlStandardReportSearch.script",
+    "wqlStandardReportSecurity.script"        
   ],
   "endPoints": [
     {
       "name": "searchCustomReports",
       "baseUrlType": "workday-wql",
       "url": "<%
+                  let wql = wqlCustomReportSearch.wql;
+                  wql = empty(chkStandardReports.value) ? wql : (chkStandardReports.value == true ? wqlStandardReportSearch.wql : wql);
+
                   utils.getWQL(
-                        wqlCustomReportSearch.wql, 
+                        wql, 
                         [
                           search
                         ], 
@@ -30,8 +35,12 @@
       "name": "getCustomReportSecurity",
       "baseUrlType": "workday-wql",
       "url": "<%
+
+                  let wql = wqlCustomReportSecurity.wql;
+                  wql = empty(chkStandardReports.value) ? wql : (chkStandardReports.value == true ? wqlStandardReportSecurity.wql : wql);
+
                   utils.getWQL(
-                        wqlCustomReportSecurity.wql, 
+                        wql, 
                         [
                           wid
                         ], 
@@ -108,19 +117,28 @@
                 {
                   "type": "instanceList",
                   "id": "rptSelection",
-                  "label": "Select a Custom Report",
+                  "label": "Select a Report",
                   "required": true,
                   "values": "<% [] %>",
                   "onSearch": "<%
                                 let rptFromSearch = searchCustomReports.invoke({'search': event.query});
+
                                 rptSelection.values = rptFromSearch.data.map( row => {
-                                      {'id': row.customReport.id, 'descriptor': row.customReport.descriptor}
+                                  let id = row.customReport.id ?? row.standardReport.id ?? null; 
+                                  let descriptor = row.customReport.descriptor ?? row.standardReport.descriptor ?? null;
+                                  {'id': id, 'descriptor': descriptor};
                                 });
+
                   %>",
                   "onChange": "<%
                               rptLink.setValue('');
                               if (!empty(self.selectedEntries)) {
-                                rptLink.setValue('<h2>Report</h2>' + self.selectedEntries[0].descriptor + ' ' + utils.objLink(tenant, self.selectedEntries[0]));
+                                let link = utils.objLink(tenant, self.selectedEntries[0]);
+                                const standard = chkStandardReports.value ?? false;
+                                if (standard) {
+                                  link = utils.searchLink(tenant, self.selectedEntries[0].descriptor);
+                                }
+                                rptLink.setValue('<h2>Report</h2>' + self.selectedEntries[0].descriptor + ' ' + link);
                               }
                   %>"
                 },
@@ -172,7 +190,21 @@
                                             mdlSection.setVisible(self.value);
                                             mdlSection.setData(['(empty)']);
                                    %>"
-                    }
+                    },
+                    {
+                      "type": "checkBox",
+                      "label": "Analyze Standard Reports",
+                      "id": "chkStandardReports",
+                      "guide": {
+                        "type": "guide",
+                        "id": "chkStandardReportsGuide",
+                        "text": "Checking this box enables the analysis of Workday-Delivered Standard Reports."
+                      },
+                      "onChange": "<%
+                          rptSelection.setValues([]);
+                          rptLink.setValue('');
+                      %>"
+                    }                      
                   ]
                 }
               ]

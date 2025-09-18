@@ -1,0 +1,10 @@
+var wql = `
+  SELECT 
+  standardReport 
+  FROM allStandardReports 
+  WHERE reportName contains '?'
+`;
+
+{
+  "wql": wql
+}

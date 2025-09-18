@@ -82,6 +82,10 @@ var objLink = function(tenant_name, item) {
   return ' (<a href="/' + tenant_name + '/d/wid/' + item.id + '">↗</a>)'
 }
 
+var searchLink = function(tenant_name, item) {
+  return ' (<a href="/' + tenant_name + '/d/search.htmld?q=' + item.urlEncode() + '">↗</a>)'
+}
+
 
 {
   "getWQL": getWQL,
@@ -93,5 +97,6 @@ var objLink = function(tenant_name, item) {
   "accessCheck": accessCheck,
   "getFromMoment": getFromMoment,
   "resultInd": resultInd,
-  "objLink": objLink
+  "objLink": objLink,
+  "searchLink": searchLink
 }
